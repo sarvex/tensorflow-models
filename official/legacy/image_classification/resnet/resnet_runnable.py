@@ -37,8 +37,8 @@ class ResnetRunnable(orbit.StandardTrainer, orbit.StandardEvaluator):
     batch_size = flags_obj.batch_size
     if batch_size % self.strategy.num_replicas_in_sync != 0:
       raise ValueError(
-          'Batch size must be divisible by number of replicas : {}'.format(
-              self.strategy.num_replicas_in_sync))
+          f'Batch size must be divisible by number of replicas : {self.strategy.num_replicas_in_sync}'
+      )
 
     # As auto rebatching is not supported in
     # `distribute_datasets_from_function()` API, which is
@@ -65,9 +65,10 @@ class ResnetRunnable(orbit.StandardTrainer, orbit.StandardEvaluator):
         batch_size=flags_obj.batch_size,
         epoch_size=imagenet_preprocessing.NUM_IMAGES['train'],
         warmup_epochs=common.LR_SCHEDULE[0][1],
-        boundaries=list(p[1] for p in common.LR_SCHEDULE[1:]),
-        multipliers=list(p[0] for p in common.LR_SCHEDULE),
-        compute_lr_on_cpu=True)
+        boundaries=[p[1] for p in common.LR_SCHEDULE[1:]],
+        multipliers=[p[0] for p in common.LR_SCHEDULE],
+        compute_lr_on_cpu=True,
+    )
     self.optimizer = common.get_optimizer(lr_schedule)
     # Make sure iterations variable is created inside scope.
     self.global_step = self.optimizer.iterations

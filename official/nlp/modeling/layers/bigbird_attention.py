@@ -87,15 +87,14 @@ def bigbird_block_rand_mask(from_seq_length,
     elif i == from_seq_length // from_block_size - 2:
       rand_attn[i - 1, :] = np.random.permutation(middle_seq[:last])[:r]
       # Missing -4: should have been sliced till last-4
+    elif start > last:
+      start = last
+      rand_attn[i - 1, :] = np.random.permutation(middle_seq[:start])[:r]
+    elif (end + 1) == last:
+      rand_attn[i - 1, :] = np.random.permutation(middle_seq[:start])[:r]
     else:
-      if start > last:
-        start = last
-        rand_attn[i - 1, :] = np.random.permutation(middle_seq[:start])[:r]
-      elif (end + 1) == last:
-        rand_attn[i - 1, :] = np.random.permutation(middle_seq[:start])[:r]
-      else:
-        rand_attn[i - 1, :] = np.random.permutation(
-            np.concatenate((middle_seq[:start], middle_seq[end + 1:last])))[:r]
+      rand_attn[i - 1, :] = np.random.permutation(
+          np.concatenate((middle_seq[:start], middle_seq[end + 1:last])))[:r]
   return rand_attn
 
 

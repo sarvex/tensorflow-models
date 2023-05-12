@@ -104,10 +104,9 @@ def get_config(model: str, dataset: str) -> base_configs.ExperimentConfig:
     return dataset_model_config_map[dataset][model]
   except KeyError:
     if dataset not in dataset_model_config_map:
-      raise KeyError('Invalid dataset received. Received: {}. Supported '
-                     'datasets include: {}'.format(
-                         dataset, ', '.join(dataset_model_config_map.keys())))
-    raise KeyError('Invalid model received. Received: {}. Supported models for'
-                   '{} include: {}'.format(
-                       model, dataset,
-                       ', '.join(dataset_model_config_map[dataset].keys())))
+      raise KeyError(
+          f"Invalid dataset received. Received: {dataset}. Supported datasets include: {', '.join(dataset_model_config_map.keys())}"
+      )
+    raise KeyError(
+        f"Invalid model received. Received: {model}. Supported models for{dataset} include: {', '.join(dataset_model_config_map[dataset].keys())}"
+    )

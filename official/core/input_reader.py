@@ -60,15 +60,15 @@ def match_files(input_path: Union[Sequence[str], str]) -> List[str]:
       if not input_pattern:
         continue
       if '*' in input_pattern or '?' in input_pattern:
-        tmp_matched_files = tf.io.gfile.glob(input_pattern)
-        if not tmp_matched_files:
-          raise ValueError('%s does not match any files.' % input_pattern)
-        matched_files.extend(tmp_matched_files)
+        if tmp_matched_files := tf.io.gfile.glob(input_pattern):
+          matched_files.extend(tmp_matched_files)
+        else:
+          raise ValueError(f'{input_pattern} does not match any files.')
       else:
         matched_files.append(input_pattern)
 
   if not matched_files:
-    raise ValueError('%s does not match any files.' % input_path)
+    raise ValueError(f'{input_path} does not match any files.')
 
   return matched_files
 
@@ -122,10 +122,9 @@ def _shard_files_then_read(matched_files: List[str],
     # its own shard the files do not overlap.
     if sharding and seed is None:
       seed = _get_random_integer()
-    dataset = dataset.shuffle(
-        len(matched_files),
-        seed=seed,
-        reshuffle_each_iteration=True if not cache else False)
+    dataset = dataset.shuffle(len(matched_files),
+                              seed=seed,
+                              reshuffle_each_iteration=not cache)
 
   # Do not enable sharding if tf.data service is enabled, as sharding will be
   # handled inside tf.data service.
@@ -227,28 +226,27 @@ class InputReader:
         will be executed after batching.
     """
     if params.input_path and params.tfds_name:
-      raise ValueError('At most one of `input_path` and `tfds_name` can be '
-                       'specified, but got %s and %s.' %
-                       (params.input_path, params.tfds_name))
+      raise ValueError(
+          f'At most one of `input_path` and `tfds_name` can be specified, but got {params.input_path} and {params.tfds_name}.'
+      )
 
     if isinstance(params.input_path,
                   cfg.base_config.Config) and combine_fn is None:
       raise ValueError(
           'A `combine_fn` is required if the `input_path` is a dictionary.')
 
-    self._tfds_builder = None
     self._matched_files = None
-    if not params.input_path:
-      # Read dataset from TFDS.
-      if not params.tfds_split:
-        raise ValueError(
-            '`tfds_name` is %s, but `tfds_split` is not specified.' %
-            params.tfds_name)
-      self._tfds_builder = tfds.builder(
-          params.tfds_name, data_dir=params.tfds_data_dir)
-    else:
+    self._tfds_builder = None
+    if params.input_path:
       self._matched_files = self.get_files(params.input_path)
 
+    elif not params.tfds_split:
+      raise ValueError(
+          f'`tfds_name` is {params.tfds_name}, but `tfds_split` is not specified.'
+      )
+    else:
+      self._tfds_builder = tfds.builder(
+          params.tfds_name, data_dir=params.tfds_data_dir)
     self._global_batch_size = params.global_batch_size
     self._is_training = params.is_training
     self._drop_remainder = params.drop_remainder
@@ -303,15 +301,10 @@ class InputReader:
     """Gets matched files. Can be overridden by subclasses."""
     if not input_path:
       return None
-    # we want to combine / mix datasets
-    if isinstance(input_path, cfg.base_config.Config):
-      matched_files = {}
-      for k, v in input_path.as_dict().items():
-        matched_files[k] = match_files(v)
-    # single dataset
-    else:
-      matched_files = match_files(input_path)
-    return matched_files
+    return ({k: match_files(v)
+             for k, v in input_path.as_dict().items()} if isinstance(
+                 input_path, cfg.base_config.Config) else
+            match_files(input_path))
 
   def _read_data_source(
       self,

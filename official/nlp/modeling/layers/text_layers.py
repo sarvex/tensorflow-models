@@ -36,11 +36,11 @@ def _check_if_tf_text_installed():
 def _truncate_row_lengths(ragged_tensor: tf.RaggedTensor,
                           new_lengths: tf.Tensor) -> tf.RaggedTensor:
   """Truncates the rows of `ragged_tensor` to the given row lengths."""
-  new_lengths = tf.broadcast_to(new_lengths,
-                                ragged_tensor.bounding_shape()[0:1])
+  new_lengths = tf.broadcast_to(new_lengths, ragged_tensor.bounding_shape()[:1])
   def fn(x):
     row, new_length = x
-    return row[0:new_length]
+    return row[:new_length]
+
   fn_dtype = tf.RaggedTensorSpec(dtype=ragged_tensor.dtype,
                                  ragged_rank=ragged_tensor.ragged_rank - 1)
   result = tf.map_fn(fn, (ragged_tensor, new_lengths), dtype=fn_dtype)
@@ -566,7 +566,7 @@ class BertPackInputs(tf.keras.layers.Layer):
       trimmed_segments = text.WaterfallTrimmer(
           seq_length - num_special_tokens).trim(inputs)
     else:
-      raise ValueError("Unsupported truncator: %s" % truncator)
+      raise ValueError(f"Unsupported truncator: {truncator}")
     # Combine segments.
     segments_combined, segment_ids = text.combine_segments(
         trimmed_segments,
@@ -583,6 +583,7 @@ class BertPackInputs(tf.keras.layers.Layer):
         tf.cast(seq_length, dtype=tf.int32)])
     def _reshape(t):
       return tf.reshape(t, output_shape)
+
     # Assemble nest of input tensors as expected by BERT TransformerEncoder.
     return dict(input_word_ids=_reshape(input_word_ids),
                 input_mask=_reshape(input_mask),

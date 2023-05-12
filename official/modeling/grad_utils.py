@@ -33,8 +33,9 @@ def _filter_grads(grads_and_vars):
       filtered.append((grad, var))
   filtered = tuple(filtered)
   if not filtered:
-    raise ValueError("No gradients provided for any variable: %s." %
-                     ([v.name for _, v in grads_and_vars],))
+    raise ValueError(
+        f"No gradients provided for any variable: {[v.name for _, v in grads_and_vars]}."
+    )
   if vars_with_empty_grads:
     logging.warning(
         ("Gradients do not exist for variables %s when minimizing the loss."),

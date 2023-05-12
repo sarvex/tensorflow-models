@@ -124,13 +124,12 @@ def validate_flags(flags_obj: flags.FlagValues, file_exists_fn: Callable[[str],
 
   def _check_path_exists(flag_path, flag_name):
     if not file_exists_fn(flag_path):
-      raise ValueError('Flag `%s` at %s does not exist.' %
-                       (flag_name, flag_path))
+      raise ValueError(f'Flag `{flag_name}` at {flag_path} does not exist.')
 
   def _validate_path(flag_path, flag_name):
     if not flag_path:
-      raise ValueError('Flag `%s` must be provided in mode %s.' %
-                       (flag_name, flags_obj.mode))
+      raise ValueError(
+          f'Flag `{flag_name}` must be provided in mode {flags_obj.mode}.')
     _check_path_exists(flag_path, flag_name)
 
   if 'train' in flags_obj.mode:

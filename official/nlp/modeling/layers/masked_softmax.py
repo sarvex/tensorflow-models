@@ -30,9 +30,7 @@ def _large_compatible_negative(tensor_type):
   Returns:
     A large negative number.
   """
-  if tensor_type == tf.float16:
-    return tf.float16.min
-  return -1e9
+  return tf.float16.min if tensor_type == tf.float16 else -1e9
 
 
 @tf.keras.utils.register_keras_serializable(package='Text')

@@ -100,8 +100,7 @@ def load_model_config_file(model_config_file: str) -> Dict[str, Any]:
 
   def get_value(key1, key2):
     if key1 in config and key2 in config:
-      raise ValueError('Unexpected that both %s and %s are in config.' %
-                       (key1, key2))
+      raise ValueError(f'Unexpected that both {key1} and {key2} are in config.')
 
     return config[key1] if key1 in config else config[key2]
 
@@ -434,10 +433,9 @@ def write_tagging(task, model, input_file, output_file, predict_batch_size,
   with tf.io.gfile.GFile(output_file, 'w') as writer:
     for sentence_id, _, predict_ids in results:
       token_labels = [class_names[x] for x in predict_ids]
-      assert sentence_id == last_sentence_id or (
-          sentence_id == last_sentence_id + 1)
+      assert sentence_id in [last_sentence_id, last_sentence_id + 1]
 
-      if sentence_id != last_sentence_id and last_sentence_id != -1:
+      if sentence_id != last_sentence_id != -1:
         writer.write('\n')
 
       writer.write('\n'.join(token_labels))

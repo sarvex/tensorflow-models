@@ -73,7 +73,7 @@ def _override_exp_config_by_file(exp_config, exp_config_files):
   """Overrides an `ExperimentConfig` object by files."""
   for exp_config_file in exp_config_files:
     if not tf.io.gfile.exists(exp_config_file):
-      raise ValueError('%s does not exist.' % exp_config_file)
+      raise ValueError(f'{exp_config_file} does not exist.')
     params_dict.override_params_dict(
         exp_config, exp_config_file, is_strict=True)
 
@@ -93,7 +93,7 @@ def _override_exp_config_by_flags(exp_config, input_meta_data):
         binary_helper.override_sentence_prediction_task_config,
         num_classes=input_meta_data['num_labels'])
   else:
-    raise ValueError('Task %s not supported.' % FLAGS.task_name)
+    raise ValueError(f'Task {FLAGS.task_name} not supported.')
 
   binary_helper.override_trainer_cfg(
       exp_config.trainer,

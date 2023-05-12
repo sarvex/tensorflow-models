@@ -98,7 +98,7 @@ class ClassificationHead(tf.keras.layers.Layer):
         "activation": tf.keras.activations.serialize(self.activation),
         "initializer": tf.keras.initializers.serialize(self.initializer),
     }
-    config.update(super(ClassificationHead, self).get_config())
+    config |= super(ClassificationHead, self).get_config()
     return config
 
   @classmethod
@@ -150,11 +150,10 @@ class MultiClsHeads(tf.keras.layers.Layer):
           name="pooler_dense")
     self.dropout = tf.keras.layers.Dropout(rate=self.dropout_rate)
     self.out_projs = []
-    for name, num_classes in cls_list:
-      self.out_projs.append(
-          tf.keras.layers.Dense(
-              units=num_classes, kernel_initializer=self.initializer,
-              name=name))
+    self.out_projs.extend(
+        tf.keras.layers.Dense(
+            units=num_classes, kernel_initializer=self.initializer, name=name)
+        for name, num_classes in cls_list)
 
   def call(self, features: tf.Tensor, only_project: bool = False):
     """Implements call().
@@ -179,10 +178,7 @@ class MultiClsHeads(tf.keras.layers.Layer):
       return x
     x = self.dropout(x)
 
-    outputs = {}
-    for proj_layer in self.out_projs:
-      outputs[proj_layer.name] = proj_layer(x)
-    return outputs
+    return {proj_layer.name: proj_layer(x) for proj_layer in self.out_projs}
 
   def get_config(self):
     config = {
@@ -193,7 +189,7 @@ class MultiClsHeads(tf.keras.layers.Layer):
         "activation": tf.keras.activations.serialize(self.activation),
         "initializer": tf.keras.initializers.serialize(self.initializer),
     }
-    config.update(super().get_config())
+    config |= super().get_config()
     return config
 
   @classmethod
@@ -202,9 +198,7 @@ class MultiClsHeads(tf.keras.layers.Layer):
 
   @property
   def checkpoint_items(self):
-    items = {self.dense.name: self.dense}
-    items.update({v.name: v for v in self.out_projs})
-    return items
+    return {self.dense.name: self.dense} | {v.name: v for v in self.out_projs}
 
 
 class GaussianProcessClassificationHead(ClassificationHead):
@@ -314,9 +308,7 @@ class GaussianProcessClassificationHead(ClassificationHead):
       logits = gaussian_process.mean_field_logits(
           logits, covmat, mean_field_factor=self.temperature)
 
-    if return_covmat and covmat is not None:
-      return logits, covmat
-    return logits
+    return (logits, covmat) if return_covmat and covmat is not None else logits
 
   def reset_covariance_matrix(self):
     """Resets covariance matrix of the Gaussian process layer."""
@@ -327,7 +319,7 @@ class GaussianProcessClassificationHead(ClassificationHead):
     config = dict(
         use_spec_norm=self.use_spec_norm, use_gp_layer=self.use_gp_layer)
 
-    config.update(self.spec_norm_kwargs)
+    config |= self.spec_norm_kwargs
     config.update(self.gp_layer_kwargs)
     config["temperature"] = self.temperature
 

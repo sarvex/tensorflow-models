@@ -66,11 +66,10 @@ def _build_attention_equation(rank, attn_axes):
   product_notation = "".join([target_notation[i] for i in batch_dims] +
                              [target_notation[i] for i in attn_axes] +
                              [source_notation[i] for i in attn_axes])
-  dot_product_equation = "%s,%s->%s" % (source_notation, target_notation,
-                                        product_notation)
+  dot_product_equation = (
+      f"{source_notation},{target_notation}->{product_notation}")
   attn_scores_rank = len(product_notation)
-  combine_equation = "%s,%s->%s" % (product_notation, source_notation,
-                                    target_notation)
+  combine_equation = f"{product_notation},{source_notation}->{target_notation}"
   return dot_product_equation, combine_equation, attn_scores_rank
 
 
@@ -98,7 +97,7 @@ def _build_proj_equation(free_dims, bound_dims, output_dims):
     kernel_str += char
     output_str += char
     bias_axes += char
-  equation = "%s,%s->%s" % (input_str, kernel_str, output_str)
+  equation = f"{input_str},{kernel_str}->{output_str}"
 
   return equation, bias_axes, len(output_str)
 
@@ -482,8 +481,7 @@ class ReuseMultiHeadAttention(tf.keras.layers.Layer):
                              -1) + tf.range(key_seq_length) + position_zero
     indices = tf.maximum(indices, 0)
     indices = tf.minimum(indices, 2*self._pe_max_seq_length-2)
-    attention_biases = tf.gather(self._position_embeddings, indices, axis=2)
-    return attention_biases
+    return tf.gather(self._position_embeddings, indices, axis=2)
 
   def _compute_attention(self,
                          query,

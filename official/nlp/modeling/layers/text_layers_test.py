@@ -151,9 +151,8 @@ class SentencepieceTokenizerTest(tf.test.TestCase):
         pad_id=0, unk_id=1, control_symbols="[CLS],[SEP],[MASK]",
         vocab_size=full_vocab_size,
         bos_id=full_vocab_size-2, eos_id=full_vocab_size-1)
-    SentencePieceTrainer.Train(
-        " ".join(["--{}={}".format(k, v) for k, v in flags.items()]))
-    self._spm_path = model_prefix + ".model"
+    SentencePieceTrainer.Train(" ".join([f"--{k}={v}" for k, v in flags.items()]))
+    self._spm_path = f"{model_prefix}.model"
 
   def test_uncased(self):
     sentencepiece_tokenizer = text_layers.SentencepieceTokenizer(

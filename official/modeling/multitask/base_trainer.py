@@ -64,11 +64,12 @@ class MultiTaskBaseTrainer(orbit.StandardTrainer):
         **checkpoint_items)
 
     if train_datasets is None:
-      train_datasets = {}
-      for name, task in self.multi_task.tasks.items():
-        train_datasets[name] = orbit.utils.make_distributed_dataset(
-            self.strategy, task.build_inputs, task.task_config.train_data)
-
+      train_datasets = {
+          name:
+          orbit.utils.make_distributed_dataset(self.strategy, task.build_inputs,
+                                               task.task_config.train_data)
+          for name, task in self.multi_task.tasks.items()
+      }
     super().__init__(
         train_dataset=train_datasets,
         options=trainer_options or orbit.StandardTrainerOptions())
@@ -84,9 +85,12 @@ class MultiTaskBaseTrainer(orbit.StandardTrainer):
 
   def train_loop_end(self):
     """Record loss and metric values per task."""
-    result = {}
-    for task_name, loss in self.training_losses.items():
-      result[task_name] = {loss.name: loss.result()}
+    result = {
+        task_name: {
+            loss.name: loss.result()
+        }
+        for task_name, loss in self.training_losses.items()
+    }
     for task_name, task_metrics in self.training_metrics.items():
       result[task_name].update(
           {metric.name: metric.result() for metric in task_metrics})

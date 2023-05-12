@@ -418,20 +418,20 @@ class TransformerEncoder(tf.keras.layers.Layer):
   def build(self, input_shape):
     """Implements build() for the layer."""
     self.encoder_layers = []
-    for i in range(self.num_layers):
-      self.encoder_layers.append(
-          layers.TransformerEncoderBlock(
-              num_attention_heads=self.num_attention_heads,
-              inner_dim=self._intermediate_size,
-              inner_activation=self._activation,
-              output_dropout=self._dropout_rate,
-              attention_dropout=self._attention_dropout_rate,
-              use_bias=self._use_bias,
-              norm_first=self._norm_first,
-              norm_epsilon=self._norm_epsilon,
-              inner_dropout=self._intermediate_dropout,
-              attention_initializer=attention_initializer(input_shape[2]),
-              name=("layer_%d" % i)))
+    self.encoder_layers.extend(
+        layers.TransformerEncoderBlock(
+            num_attention_heads=self.num_attention_heads,
+            inner_dim=self._intermediate_size,
+            inner_activation=self._activation,
+            output_dropout=self._dropout_rate,
+            attention_dropout=self._attention_dropout_rate,
+            use_bias=self._use_bias,
+            norm_first=self._norm_first,
+            norm_epsilon=self._norm_epsilon,
+            inner_dropout=self._intermediate_dropout,
+            attention_initializer=attention_initializer(input_shape[2]),
+            name=("layer_%d" % i),
+        ) for i in range(self.num_layers))
     self.output_normalization = tf.keras.layers.LayerNormalization(
         epsilon=self._norm_epsilon, dtype="float32")
     super(TransformerEncoder, self).build(input_shape)
@@ -531,20 +531,20 @@ class TransformerDecoder(tf.keras.layers.Layer):
   def build(self, input_shape):
     """Implements build() for the layer."""
     self.decoder_layers = []
-    for i in range(self.num_layers):
-      self.decoder_layers.append(
-          layers.TransformerDecoderBlock(
-              num_attention_heads=self.num_attention_heads,
-              intermediate_size=self._intermediate_size,
-              intermediate_activation=self._activation,
-              dropout_rate=self._dropout_rate,
-              attention_dropout_rate=self._attention_dropout_rate,
-              use_bias=self._use_bias,
-              norm_first=self._norm_first,
-              norm_epsilon=self._norm_epsilon,
-              intermediate_dropout=self._intermediate_dropout,
-              attention_initializer=attention_initializer(input_shape[2]),
-              name=("layer_%d" % i)))
+    self.decoder_layers.extend(
+        layers.TransformerDecoderBlock(
+            num_attention_heads=self.num_attention_heads,
+            intermediate_size=self._intermediate_size,
+            intermediate_activation=self._activation,
+            dropout_rate=self._dropout_rate,
+            attention_dropout_rate=self._attention_dropout_rate,
+            use_bias=self._use_bias,
+            norm_first=self._norm_first,
+            norm_epsilon=self._norm_epsilon,
+            intermediate_dropout=self._intermediate_dropout,
+            attention_initializer=attention_initializer(input_shape[2]),
+            name=("layer_%d" % i),
+        ) for i in range(self.num_layers))
     self.output_normalization = tf.keras.layers.LayerNormalization(
         epsilon=1e-6, dtype="float32")
     super(TransformerDecoder, self).build(input_shape)

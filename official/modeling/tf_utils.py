@@ -72,9 +72,7 @@ def unpack_inputs(inputs):
 
   # To trick the very pointless 'unbalanced-tuple-unpacking' pylint check
   # from triggering.
-  if len(x) == 1:
-    return x[0]
-  return tuple(outputs)
+  return x[0] if len(x) == 1 else tuple(outputs)
 
 
 def is_special_none_tensor(tensor):
@@ -148,11 +146,7 @@ def get_shape_list(tensor, expected_rank=None, name=None):
 
   shape = tensor.shape.as_list()
 
-  non_static_indexes = []
-  for (index, dim) in enumerate(shape):
-    if dim is None:
-      non_static_indexes.append(index)
-
+  non_static_indexes = [index for index, dim in enumerate(shape) if dim is None]
   if not non_static_indexes:
     return shape
 

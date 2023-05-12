@@ -132,7 +132,7 @@ def main(_):
                             FLAGS.export_path, FLAGS.vocab_file,
                             FLAGS.do_lower_case)
   else:
-    raise ValueError("Unsupported model_type %s." % FLAGS.model_type)
+    raise ValueError(f"Unsupported model_type {FLAGS.model_type}.")
 
 
 if __name__ == "__main__":

@@ -49,10 +49,9 @@ def create_in_process_cluster(num_workers, num_ps):
   worker_ports = [portpicker.pick_unused_port() for _ in range(num_workers)]
   ps_ports = [portpicker.pick_unused_port() for _ in range(num_ps)]
 
-  cluster_dict = {}
-  cluster_dict['worker'] = ['localhost:%s' % port for port in worker_ports]
+  cluster_dict = {'worker': [f'localhost:{port}' for port in worker_ports]}
   if num_ps > 0:
-    cluster_dict['ps'] = ['localhost:%s' % port for port in ps_ports]
+    cluster_dict['ps'] = [f'localhost:{port}' for port in ps_ports]
 
   cluster_spec = tf.train.ClusterSpec(cluster_dict)
 

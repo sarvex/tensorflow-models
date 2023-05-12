@@ -165,13 +165,11 @@ class MultiTaskEvaluator(orbit.AbstractEvaluator):
           reduce_fn=task.aggregate_logs)
       task_metrics = self.validation_metrics[name]
       task_loss = self.validation_losses[name]
-      logs = {}
-      for metric in task_metrics + [task_loss]:
-        logs[metric.name] = metric.result()
+      logs = {metric.name: metric.result() for metric in task_metrics + [task_loss]}
       if outputs:
         metrics = task.reduce_aggregated_logs(
             outputs, global_step=self.global_step)
-        logs.update(metrics)
+        logs |= metrics
       results[name] = logs
 
     if self._checkpoint_exporter:

@@ -72,15 +72,15 @@ class BertPretrainDataLoader(data_loader.DataLoader):
             tf.io.FixedLenFeature([self._max_predictions_per_seq], tf.float32),
     }
     if self._params.use_v2_feature_names:
-      name_to_features.update({
+      name_to_features |= {
           'input_word_ids': tf.io.FixedLenFeature([self._seq_length], tf.int64),
           'input_type_ids': tf.io.FixedLenFeature([self._seq_length], tf.int64),
-      })
+      }
     else:
-      name_to_features.update({
+      name_to_features |= {
           'input_ids': tf.io.FixedLenFeature([self._seq_length], tf.int64),
           'segment_ids': tf.io.FixedLenFeature([self._seq_length], tf.int64),
-      })
+      }
     if self._use_next_sentence_label:
       name_to_features['next_sentence_labels'] = tf.io.FixedLenFeature([1],
                                                                        tf.int64)
@@ -226,11 +226,8 @@ class XLNetPretrainDataLoader(data_loader.DataLoader):
 
   def _parse(self, record: Mapping[str, tf.Tensor]):
     """Parses raw tensors into a dict of tensors to be consumed by the model."""
-    x = {}
-
     inputs = record['input_word_ids']
-    x['input_type_ids'] = record['input_type_ids']
-
+    x = {'input_type_ids': record['input_type_ids']}
     if self._sample_strategy in ['whole_word', 'word_span']:
       boundary = tf.sparse.to_dense(record['boundary_indices'])
     else:
@@ -248,8 +245,8 @@ class XLNetPretrainDataLoader(data_loader.DataLoader):
       # Enable the memory mechanism.
       # Permute the reuse and non-reuse segments separately.
       non_reuse_len = self._seq_length - self._reuse_length
-      if not (self._reuse_length % self._permutation_size == 0
-              and non_reuse_len % self._permutation_size == 0):
+      if (self._reuse_length % self._permutation_size != 0
+          or non_reuse_len % self._permutation_size != 0):
         raise ValueError('`reuse_length` and `seq_length` should both be '
                          'a multiple of `permutation_size`.')
 
@@ -275,14 +272,13 @@ class XLNetPretrainDataLoader(data_loader.DataLoader):
       target_mask = tf.concat([target_mask_0, target_mask_1], axis=0)
       tokens = tf.concat([tokens_0, tokens_1], axis=0)
       masked_tokens = tf.concat([masked_0, masked_1], axis=0)
-    else:
-      # Disable the memory mechanism.
-      if self._seq_length % self._permutation_size != 0:
-        raise ValueError('`seq_length` should be a multiple of '
-                         '`permutation_size`.')
+    elif self._seq_length % self._permutation_size == 0:
       # Permute the entire sequence together
       perm_mask, target_mask, tokens, masked_tokens = self._get_factorization(
           inputs=inputs, input_mask=input_mask)
+    else:
+      raise ValueError('`seq_length` should be a multiple of '
+                       '`permutation_size`.')
     x['permutation_mask'] = tf.reshape(
         perm_mask, [self._seq_length, self._seq_length])
     x['input_word_ids'] = tokens
@@ -517,8 +513,8 @@ class XLNetPretrainDataLoader(data_loader.DataLoader):
       raise ValueError('`max_predictions_per_seq` must be set.')
 
     if boundary is None and 'word' in self._sample_strategy:
-      raise ValueError('`boundary` must be provided for {} strategy'.format(
-          self._sample_strategy))
+      raise ValueError(
+          f'`boundary` must be provided for {self._sample_strategy} strategy')
 
     if self._sample_strategy == 'single_token':
       return self._single_token_mask(inputs)

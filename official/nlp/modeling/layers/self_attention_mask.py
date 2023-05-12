@@ -52,7 +52,4 @@ class SelfAttentionMask(tf.keras.layers.Layer):
     broadcast_ones = tf.ones(
         shape=[batch_size, from_seq_length, 1], dtype=inputs.dtype)
 
-    # Here we broadcast along two dimensions to create the mask.
-    mask = broadcast_ones * to_mask
-
-    return mask
+    return broadcast_ones * to_mask

@@ -229,8 +229,8 @@ class DatasetBuilder:
     try:
       return dtype_map[self.config.dtype]
     except:
-      raise ValueError('Invalid DType provided. Supported types: {}'.format(
-          dtype_map.keys()))
+      raise ValueError(
+          f'Invalid DType provided. Supported types: {dtype_map.keys()}')
 
   @property
   def image_size(self) -> int:
@@ -291,17 +291,15 @@ class DatasetBuilder:
     Returns:
       A TensorFlow dataset outputting batched images and labels.
     """
-    if strategy:
-      if strategy.num_replicas_in_sync != self.config.num_devices:
-        logging.warn(
-            'Passed a strategy with %d devices, but expected'
-            '%d devices.', strategy.num_replicas_in_sync,
-            self.config.num_devices)
-      dataset = strategy.distribute_datasets_from_function(self._build)
-    else:
-      dataset = self._build()
+    if not strategy:
+      return self._build()
 
-    return dataset
+    if strategy.num_replicas_in_sync != self.config.num_devices:
+      logging.warn(
+          'Passed a strategy with %d devices, but expected'
+          '%d devices.', strategy.num_replicas_in_sync,
+          self.config.num_devices)
+    return strategy.distribute_datasets_from_function(self._build)
 
   def _build(
       self,
@@ -325,7 +323,7 @@ class DatasetBuilder:
     builder = builders.get(self.config.builder, None)
 
     if builder is None:
-      raise ValueError('Unknown builder type {}'.format(self.config.builder))
+      raise ValueError(f'Unknown builder type {self.config.builder}')
 
     self.input_context = input_context
     dataset = builder()
@@ -352,29 +350,25 @@ class DatasetBuilder:
         interleave_block_length=1,
         input_context=self.input_context)
 
-    dataset = builder.as_dataset(
+    return builder.as_dataset(
         split=self.config.split,
         as_supervised=True,
         shuffle_files=True,
         decoders=decoders,
-        read_config=read_config)
-
-    return dataset
+        read_config=read_config,
+    )
 
   def load_records(self) -> tf.data.Dataset:
     """Return a dataset loading files with TFRecords."""
     logging.info('Using TFRecords to load data.')
-    if self.config.filenames is None:
-      if self.config.data_dir is None:
-        raise ValueError('Dataset must specify a path for the data files.')
+    if self.config.filenames is not None:
+      return tf.data.Dataset.from_tensor_slices(self.config.filenames)
 
-      file_pattern = os.path.join(self.config.data_dir,
-                                  '{}*'.format(self.config.split))
-      dataset = tf.data.Dataset.list_files(file_pattern, shuffle=False)
-    else:
-      dataset = tf.data.Dataset.from_tensor_slices(self.config.filenames)
+    if self.config.data_dir is None:
+      raise ValueError('Dataset must specify a path for the data files.')
 
-    return dataset
+    file_pattern = os.path.join(self.config.data_dir, f'{self.config.split}*')
+    return tf.data.Dataset.list_files(file_pattern, shuffle=False)
 
   def load_synthetic(self) -> tf.data.Dataset:
     """Return a dataset generating dummy synthetic data."""
@@ -443,11 +437,8 @@ class DatasetBuilder:
     if self.input_context and self.config.num_devices > 1:
       if not self.config.use_per_replica_batch_size:
         raise ValueError(
-            'The builder does not support a global batch size with more than '
-            'one replica. Got {} replicas. Please set a '
-            '`per_replica_batch_size` and enable '
-            '`use_per_replica_batch_size=True`.'.format(
-                self.config.num_devices))
+            f'The builder does not support a global batch size with more than one replica. Got {self.config.num_devices} replicas. Please set a `per_replica_batch_size` and enable `use_per_replica_batch_size=True`.'
+        )
 
       # The batch size of the dataset will be multiplied by the number of
       # replicas automatically when strategy.distribute_datasets_from_function
@@ -463,9 +454,9 @@ class DatasetBuilder:
 
     if self.config.tf_data_service:
       if not hasattr(tf.data.experimental, 'service'):
-        raise ValueError('The tf_data_service flag requires Tensorflow version '
-                         '>= 2.3.0, but the version is {}'.format(
-                             tf.__version__))
+        raise ValueError(
+            f'The tf_data_service flag requires Tensorflow version >= 2.3.0, but the version is {tf.__version__}'
+        )
       dataset = dataset.apply(
           tf.data.experimental.service.distribute(
               processing_mode='parallel_epochs',

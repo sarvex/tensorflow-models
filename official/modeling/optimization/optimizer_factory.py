@@ -68,7 +68,7 @@ def register_optimizer_cls(
     optimizer_config_cls: A class which inherits tf.keras.optimizers.Optimizer.
   """
   if key in OPTIMIZERS_CLS:
-    raise ValueError('%s already registered in OPTIMIZER_CLS.' % key)
+    raise ValueError(f'{key} already registered in OPTIMIZER_CLS.')
   OPTIMIZERS_CLS[key] = optimizer_config_cls
 
 
@@ -201,8 +201,8 @@ class OptimizerFactory:
           optimizer, **self._ema_config.as_dict())
     if postprocessor:
       optimizer = postprocessor(optimizer)
-    assert isinstance(optimizer, tf.keras.optimizers.Optimizer), (
-        'OptimizerFactory.build_optimizer returning a non-optimizer object: '
-        '{}'.format(optimizer))
+    assert isinstance(
+        optimizer, tf.keras.optimizers.Optimizer
+    ), f'OptimizerFactory.build_optimizer returning a non-optimizer object: {optimizer}'
 
     return optimizer

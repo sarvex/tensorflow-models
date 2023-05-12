@@ -62,26 +62,24 @@ def identity_block(input_tensor,
     Output tensor for the block.
   """
   filters1, filters2, filters3 = filters
-  if tf.keras.backend.image_data_format() == 'channels_last':
-    bn_axis = 3
-  else:
-    bn_axis = 1
-  conv_name_base = 'res' + str(stage) + block + '_branch'
-  bn_name_base = 'bn' + str(stage) + block + '_branch'
+  bn_axis = 3 if tf.keras.backend.image_data_format() == 'channels_last' else 1
+  conv_name_base = f'res{str(stage)}{block}_branch'
+  bn_name_base = f'bn{str(stage)}{block}_branch'
 
   x = layers.Conv2D(
-      filters1, (1, 1),
+      filters1,
+      (1, 1),
       use_bias=False,
       kernel_initializer='he_normal',
       kernel_regularizer=_gen_l2_regularizer(use_l2_regularizer),
-      name=conv_name_base + '2a')(
-          input_tensor)
+      name=f'{conv_name_base}2a',
+  )(input_tensor)
   x = layers.BatchNormalization(
       axis=bn_axis,
       momentum=batch_norm_decay,
       epsilon=batch_norm_epsilon,
-      name=bn_name_base + '2a')(
-          x)
+      name=f'{bn_name_base}2a',
+  )(x)
   x = layers.Activation('relu')(x)
 
   x = layers.Conv2D(
@@ -91,29 +89,30 @@ def identity_block(input_tensor,
       use_bias=False,
       kernel_initializer='he_normal',
       kernel_regularizer=_gen_l2_regularizer(use_l2_regularizer),
-      name=conv_name_base + '2b')(
-          x)
+      name=f'{conv_name_base}2b',
+  )(x)
   x = layers.BatchNormalization(
       axis=bn_axis,
       momentum=batch_norm_decay,
       epsilon=batch_norm_epsilon,
-      name=bn_name_base + '2b')(
-          x)
+      name=f'{bn_name_base}2b',
+  )(x)
   x = layers.Activation('relu')(x)
 
   x = layers.Conv2D(
-      filters3, (1, 1),
+      filters3,
+      (1, 1),
       use_bias=False,
       kernel_initializer='he_normal',
       kernel_regularizer=_gen_l2_regularizer(use_l2_regularizer),
-      name=conv_name_base + '2c')(
-          x)
+      name=f'{conv_name_base}2c',
+  )(x)
   x = layers.BatchNormalization(
       axis=bn_axis,
       momentum=batch_norm_decay,
       epsilon=batch_norm_epsilon,
-      name=bn_name_base + '2c')(
-          x)
+      name=f'{bn_name_base}2c',
+  )(x)
 
   x = layers.add([x, input_tensor])
   x = layers.Activation('relu')(x)
@@ -150,26 +149,24 @@ def conv_block(input_tensor,
     Output tensor for the block.
   """
   filters1, filters2, filters3 = filters
-  if tf.keras.backend.image_data_format() == 'channels_last':
-    bn_axis = 3
-  else:
-    bn_axis = 1
-  conv_name_base = 'res' + str(stage) + block + '_branch'
-  bn_name_base = 'bn' + str(stage) + block + '_branch'
+  bn_axis = 3 if tf.keras.backend.image_data_format() == 'channels_last' else 1
+  conv_name_base = f'res{str(stage)}{block}_branch'
+  bn_name_base = f'bn{str(stage)}{block}_branch'
 
   x = layers.Conv2D(
-      filters1, (1, 1),
+      filters1,
+      (1, 1),
       use_bias=False,
       kernel_initializer='he_normal',
       kernel_regularizer=_gen_l2_regularizer(use_l2_regularizer),
-      name=conv_name_base + '2a')(
-          input_tensor)
+      name=f'{conv_name_base}2a',
+  )(input_tensor)
   x = layers.BatchNormalization(
       axis=bn_axis,
       momentum=batch_norm_decay,
       epsilon=batch_norm_epsilon,
-      name=bn_name_base + '2a')(
-          x)
+      name=f'{bn_name_base}2a',
+  )(x)
   x = layers.Activation('relu')(x)
 
   x = layers.Conv2D(
@@ -180,44 +177,46 @@ def conv_block(input_tensor,
       use_bias=False,
       kernel_initializer='he_normal',
       kernel_regularizer=_gen_l2_regularizer(use_l2_regularizer),
-      name=conv_name_base + '2b')(
-          x)
+      name=f'{conv_name_base}2b',
+  )(x)
   x = layers.BatchNormalization(
       axis=bn_axis,
       momentum=batch_norm_decay,
       epsilon=batch_norm_epsilon,
-      name=bn_name_base + '2b')(
-          x)
+      name=f'{bn_name_base}2b',
+  )(x)
   x = layers.Activation('relu')(x)
 
   x = layers.Conv2D(
-      filters3, (1, 1),
+      filters3,
+      (1, 1),
       use_bias=False,
       kernel_initializer='he_normal',
       kernel_regularizer=_gen_l2_regularizer(use_l2_regularizer),
-      name=conv_name_base + '2c')(
-          x)
+      name=f'{conv_name_base}2c',
+  )(x)
   x = layers.BatchNormalization(
       axis=bn_axis,
       momentum=batch_norm_decay,
       epsilon=batch_norm_epsilon,
-      name=bn_name_base + '2c')(
-          x)
+      name=f'{bn_name_base}2c',
+  )(x)
 
   shortcut = layers.Conv2D(
-      filters3, (1, 1),
+      filters3,
+      (1, 1),
       strides=strides,
       use_bias=False,
       kernel_initializer='he_normal',
       kernel_regularizer=_gen_l2_regularizer(use_l2_regularizer),
-      name=conv_name_base + '1')(
-          input_tensor)
+      name=f'{conv_name_base}1',
+  )(input_tensor)
   shortcut = layers.BatchNormalization(
       axis=bn_axis,
       momentum=batch_norm_decay,
       epsilon=batch_norm_epsilon,
-      name=bn_name_base + '1')(
-          shortcut)
+      name=f'{bn_name_base}1',
+  )(shortcut)
 
   x = layers.add([x, shortcut])
   x = layers.Activation('relu')(x)

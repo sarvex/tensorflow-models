@@ -62,10 +62,7 @@ class MockTask(base_task.Task):
     def generate_data(_):
       x = tf.zeros(shape=(2,), dtype=tf.float32)
       label = tf.zeros([1], dtype=tf.int32)
-      if self.name == "bar":
-        return dict(x=x, y=x), label
-      else:
-        return dict(x=x), label
+      return (dict(x=x, y=x), label) if self.name == "bar" else (dict(x=x), label)
 
     dataset = tf.data.Dataset.range(1)
     dataset = dataset.repeat()

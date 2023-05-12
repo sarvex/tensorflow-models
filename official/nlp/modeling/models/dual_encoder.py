@@ -119,7 +119,7 @@ class DualEncoder(tf.keras.Model):
       outputs = dict(
           sequence_output=left_sequence_output, pooled_output=left_encoded)
     else:
-      raise ValueError('output type %s is not supported' % output)
+      raise ValueError(f'output type {output} is not supported')
 
     # b/164516224
     # Once we've created the network using the Functional API, we call
@@ -158,5 +158,4 @@ class DualEncoder(tf.keras.Model):
   @property
   def checkpoint_items(self):
     """Returns a dictionary of items to be additionally checkpointed."""
-    items = dict(encoder=self.network)
-    return items
+    return dict(encoder=self.network)

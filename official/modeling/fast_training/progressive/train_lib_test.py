@@ -89,9 +89,7 @@ class ProgMockTask(policies.ProgressivePolicy, mock_task.MockTask):
         }
     })
     opt_factory = optimization.OptimizerFactory(params)
-    optimizer = opt_factory.build_optimizer(opt_factory.build_learning_rate())
-
-    return optimizer
+    return opt_factory.build_optimizer(opt_factory.build_learning_rate())
 
   def get_train_dataset(self, stage_id):
     del stage_id

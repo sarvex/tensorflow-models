@@ -102,8 +102,7 @@ def squad_loss_fn(start_positions, end_positions, start_logits, end_logits):
   end_loss = tf.keras.losses.sparse_categorical_crossentropy(
       end_positions, end_logits, from_logits=True)
 
-  total_loss = (tf.reduce_mean(start_loss) + tf.reduce_mean(end_loss)) / 2
-  return total_loss
+  return (tf.reduce_mean(start_loss) + tf.reduce_mean(end_loss)) / 2
 
 
 def get_loss_fn():
@@ -357,11 +356,11 @@ def dump_to_files(all_predictions,
                   file_prefix=''):
   """Save output to json files."""
   output_prediction_file = os.path.join(FLAGS.model_dir,
-                                        '%spredictions.json' % file_prefix)
+                                        f'{file_prefix}predictions.json')
   output_nbest_file = os.path.join(FLAGS.model_dir,
-                                   '%snbest_predictions.json' % file_prefix)
+                                   f'{file_prefix}nbest_predictions.json')
   output_null_log_odds_file = os.path.join(FLAGS.model_dir, file_prefix,
-                                           '%snull_odds.json' % file_prefix)
+                                           f'{file_prefix}null_odds.json')
   logging.info('Writing predictions to: %s', (output_prediction_file))
   logging.info('Writing nbest to: %s', (output_nbest_file))
 
@@ -379,11 +378,10 @@ def _get_matched_files(input_path):
     input_pattern = input_pattern.strip()
     if not input_pattern:
       continue
-    matched_files = tf.io.gfile.glob(input_pattern)
-    if not matched_files:
-      raise ValueError('%s does not match any files.' % input_pattern)
-    else:
+    if matched_files := tf.io.gfile.glob(input_pattern):
       all_matched_files.extend(matched_files)
+    else:
+      raise ValueError(f'{input_pattern} does not match any files.')
   return sorted(all_matched_files)
 
 
@@ -404,13 +402,9 @@ def predict_squad(strategy,
     all_predictions, all_nbest_json, scores_diff_json = prediction_output_squad(
         strategy, input_meta_data, tokenizer, squad_lib, predict_file,
         squad_model)
-    if len(all_predict_files) == 1:
-      file_prefix = ''
-    else:
-      # if predict_file is /path/xquad.ar.json, the `file_prefix` may be
-      # "xquad.ar-0-"
-      file_prefix = '%s-' % os.path.splitext(
-          os.path.basename(all_predict_files[idx]))[0]
+    file_prefix = (
+        '' if len(all_predict_files) == 1 else
+        f'{os.path.splitext(os.path.basename(all_predict_files[idx]))[0]}-')
     dump_to_files(all_predictions, all_nbest_json, scores_diff_json, squad_lib,
                   input_meta_data.get('version_2_with_negative', False),
                   file_prefix)
@@ -428,8 +422,9 @@ def eval_squad(strategy,
 
   all_predict_files = _get_matched_files(FLAGS.predict_file)
   if len(all_predict_files) != 1:
-    raise ValueError('`eval_squad` only supports one predict file, '
-                     'but got %s' % all_predict_files)
+    raise ValueError(
+        f'`eval_squad` only supports one predict file, but got {all_predict_files}'
+    )
 
   squad_model = get_squad_model_to_predict(strategy, bert_config,
                                            init_checkpoint, input_meta_data)
@@ -442,12 +437,10 @@ def eval_squad(strategy,
   with tf.io.gfile.GFile(FLAGS.predict_file, 'r') as reader:
     dataset_json = json.load(reader)
     pred_dataset = dataset_json['data']
-  if input_meta_data.get('version_2_with_negative', False):
-    eval_metrics = squad_evaluate_v2_0.evaluate(pred_dataset, all_predictions,
-                                                scores_diff_json)
-  else:
-    eval_metrics = squad_evaluate_v1_1.evaluate(pred_dataset, all_predictions)
-  return eval_metrics
+  return (squad_evaluate_v2_0.evaluate(
+      pred_dataset, all_predictions, scores_diff_json) if input_meta_data.get(
+          'version_2_with_negative', False) else squad_evaluate_v1_1.evaluate(
+              pred_dataset, all_predictions))
 
 
 def export_squad(model_export_path, input_meta_data, bert_config):
@@ -462,7 +455,7 @@ def export_squad(model_export_path, input_meta_data, bert_config):
     Export path is not specified, got an empty string or None.
   """
   if not model_export_path:
-    raise ValueError('Export path is not specified: %s' % model_export_path)
+    raise ValueError(f'Export path is not specified: {model_export_path}')
   # Export uses float32 for now, even if training uses mixed precision.
   tf.keras.mixed_precision.set_global_policy('float32')
   squad_model, _ = bert_models.squad_model(bert_config,

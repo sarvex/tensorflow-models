@@ -66,9 +66,14 @@ class TNExpandCondense(Layer):
 
     super(TNExpandCondense, self).__init__(**kwargs)
 
-    assert proj_multiplier in [
-        2, 4, 6, 8, 10, 12
-    ], 'proj_multiplier needs to be one of [2, 4, 6, 8, 10, 12]'
+    assert proj_multiplier in {
+        2,
+        4,
+        6,
+        8,
+        10,
+        12,
+    }, 'proj_multiplier needs to be one of [2, 4, 6, 8, 10, 12]'
     self.proj_multiplier = proj_multiplier
 
     self.use_bias = use_bias
@@ -144,8 +149,7 @@ class TNExpandCondense(Layer):
     tmp = tf.einsum('aQd,db->aQb', tmp, self.w3)
     tmp = tf.einsum('aQb,abd->Qd', tmp, self.w4)
 
-    out = tf.reshape(tmp, orig_shape)
-    return out
+    return tf.reshape(tmp, orig_shape)
 
   def compute_output_shape(self, input_shape: List[int]) -> List[int]:
     return input_shape
@@ -159,13 +163,9 @@ class TNExpandCondense(Layer):
     Returns:
       Python dictionary containing the configuration of the layer.
     """
-    config = {}
-
     # Include the layer-specific arguments
     args = ['proj_multiplier', 'use_bias']
-    for arg in args:
-      config[arg] = getattr(self, arg)
-
+    config = {arg: getattr(self, arg) for arg in args}
     # Serialize the activation
     config['activation'] = activations.serialize(getattr(self, 'activation'))
 

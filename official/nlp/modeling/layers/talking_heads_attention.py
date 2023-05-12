@@ -81,8 +81,8 @@ class TalkingHeadsAttention(tf.keras.layers.MultiHeadAttention):
         _CHR_IDX[attn_scores_rank])
     projected_scores_notation = scores_notation[:num_batch_dims] + (
         _CHR_IDX[attn_scores_rank] + scores_notation[num_batch_dims + 1:])
-    self._talking_heads_equation = "%s,%s->%s" % (
-        scores_notation, projection_notation, projected_scores_notation)
+    self._talking_heads_equation = (
+        f"{scores_notation},{projection_notation}->{projected_scores_notation}")
 
     self._pre_softmax_weight = self.add_weight(
         "pre_softmax_weight",

@@ -72,23 +72,22 @@ def get_callbacks(
     # we can resume training from a checkpoint
     ckpt_full_path = os.path.join(model_dir, 'average',
                                   'model.ckpt-{epoch:04d}')
-    callbacks.append(
+    callbacks.extend((
         AverageModelCheckpoint(
             update_weights=False,
             filepath=ckpt_full_path,
             save_weights_only=True,
-            verbose=1))
-    callbacks.append(MovingAverageCallback())
+            verbose=1,
+        ),
+        MovingAverageCallback(),
+    ))
   return callbacks
 
 
 def get_scalar_from_tensor(t: tf.Tensor) -> int:
   """Utility function to convert a Tensor to a scalar."""
   t = tf.keras.backend.get_value(t)
-  if callable(t):
-    return t()
-  else:
-    return t
+  return t() if callable(t) else t
 
 
 class CustomTensorBoard(tf.keras.callbacks.TensorBoard):
@@ -148,11 +147,7 @@ class CustomTensorBoard(tf.keras.callbacks.TensorBoard):
     super(CustomTensorBoard, self).on_epoch_end(epoch, logs)
 
   def _calculate_metrics(self) -> MutableMapping[str, Any]:
-    logs = {}
-    # TODO(b/149030439): disable LR reporting.
-    # if self._track_lr:
-    #   logs['learning_rate'] = self._calculate_lr()
-    return logs
+    return {}
 
   def _calculate_lr(self) -> int:
     """Calculates the learning rate given the current step."""

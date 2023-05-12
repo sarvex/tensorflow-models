@@ -72,8 +72,8 @@ class SpectralNormalization(tf.keras.layers.Wrapper):
       wrapper_name = layer.name
 
     if not isinstance(layer, tf.keras.layers.Layer):
-      raise ValueError('`layer` must be a `tf.keras.layer.Layer`. '
-                       'Observed `{}`'.format(layer))
+      raise ValueError(
+          f'`layer` must be a `tf.keras.layer.Layer`. Observed `{layer}`')
     super(SpectralNormalization, self).__init__(
         layer, name=wrapper_name, **kwargs)
 

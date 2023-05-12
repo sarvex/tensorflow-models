@@ -103,7 +103,7 @@ def build_optimizer(
         beta_2=beta_2,
         epsilon=epsilon)
   else:
-    raise ValueError('Unknown optimizer %s' % optimizer_name)
+    raise ValueError(f'Unknown optimizer {optimizer_name}')
 
   if params.get('lookahead', None):
     logging.info('Using lookahead optimizer.')
@@ -148,7 +148,12 @@ def build_learning_rate(params: base_configs.LearningRateConfig,
         'Scaling the learning rate based on the batch size '
         'multiplier. New base_lr: %f', base_lr)
 
-  if decay_type == 'exponential':
+  if decay_type == 'cosine_with_warmup':
+    lr = learning_rate.CosineDecayWithWarmup(
+        batch_size=batch_size,
+        total_steps=train_epochs * train_steps,
+        warmup_steps=warmup_steps)
+  elif decay_type == 'exponential':
     logging.info(
         'Using exponential learning rate with: '
         'initial_learning_rate: %f, decay_steps: %d, '
@@ -167,15 +172,9 @@ def build_learning_rate(params: base_configs.LearningRateConfig,
         'boundaries: %s, values: %s', boundaries, multipliers)
     lr = tf.keras.optimizers.schedules.PiecewiseConstantDecay(
         boundaries=boundaries, values=multipliers)
-  elif decay_type == 'cosine_with_warmup':
-    lr = learning_rate.CosineDecayWithWarmup(
-        batch_size=batch_size,
-        total_steps=train_epochs * train_steps,
-        warmup_steps=warmup_steps)
-  if warmup_steps > 0:
-    if decay_type not in ['cosine_with_warmup']:
-      logging.info('Applying %d warmup steps to the learning rate',
-                   warmup_steps)
-      lr = learning_rate.WarmupDecaySchedule(
-          lr, warmup_steps, warmup_lr=base_lr)
+  if warmup_steps > 0 and decay_type not in ['cosine_with_warmup']:
+    logging.info('Applying %d warmup steps to the learning rate',
+                 warmup_steps)
+    lr = learning_rate.WarmupDecaySchedule(
+        lr, warmup_steps, warmup_lr=base_lr)
   return lr

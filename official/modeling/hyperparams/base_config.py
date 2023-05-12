@@ -193,9 +193,7 @@ class Config(params_dict.ParamsDict):
     subconfig_type = self._get_subconfig_type(k)
 
     def is_null(k):
-      if k not in self.__dict__ or not self.__dict__[k]:
-        return True
-      return False
+      return k not in self.__dict__ or not self.__dict__[k]
 
     if isinstance(v, dict):
       if is_null(k):
@@ -204,12 +202,12 @@ class Config(params_dict.ParamsDict):
         self.__dict__[k] = subconfig_type(v)
       else:
         self.__dict__[k].override(v)
-    elif not is_null(k) and isinstance(v, self.SEQUENCE_TYPES) and all(
-        [not isinstance(e, self.IMMUTABLE_TYPES) for e in v]):
+    elif (not is_null(k) and isinstance(v, self.SEQUENCE_TYPES)
+          and all(not isinstance(e, self.IMMUTABLE_TYPES) for e in v)):
       if len(self.__dict__[k]) == len(v):
         for i in range(len(v)):
           self.__dict__[k][i].override(v[i])
-      elif not all([isinstance(e, self.IMMUTABLE_TYPES) for e in v]):
+      elif not all(isinstance(e, self.IMMUTABLE_TYPES) for e in v):
         logging.warning(
             "The list/tuple don't match the value dictionaries provided. Thus, "
             'the list/tuple is determined by the type annotation and '
@@ -221,14 +219,13 @@ class Config(params_dict.ParamsDict):
       self.__dict__[k] = self._import_config(v, subconfig_type)
 
   def __setattr__(self, k, v):
-    if k == 'BUILDER' or k == '_BUILDER':
+    if k in ['BUILDER', '_BUILDER']:
       raise AttributeError('`BUILDER` is a property and `_BUILDER` is the '
                            'reserved class attribute. We should only assign '
                            '`_BUILDER` at the class level.')
 
-    if k not in self.RESERVED_ATTR:
-      if getattr(self, '_locked', False):
-        raise ValueError('The Config has been locked. ' 'No change is allowed.')
+    if k not in self.RESERVED_ATTR and getattr(self, '_locked', False):
+      raise ValueError('The Config has been locked. ' 'No change is allowed.')
     self._set(k, v)
 
   def _override(self, override_dict, is_strict=True):
@@ -247,21 +244,21 @@ class Config(params_dict.ParamsDict):
       if k in self.RESERVED_ATTR:
         raise KeyError('The key {!r} is internally reserved. '
                        'Can not be overridden.'.format(k))
-      if k not in self.__dict__:
-        if is_strict:
-          raise KeyError('The key {!r} does not exist in {!r}. '
-                         'To extend the existing keys, use '
-                         '`override` with `is_strict` = False.'.format(
-                             k, type(self)))
-        else:
-          self._set(k, v)
-      else:
+      if k in self.__dict__:
         if isinstance(v, dict) and self.__dict__[k]:
           self.__dict__[k]._override(v, is_strict)  # pylint: disable=protected-access
         elif isinstance(v, params_dict.ParamsDict) and self.__dict__[k]:
           self.__dict__[k]._override(v.as_dict(), is_strict)  # pylint: disable=protected-access
         else:
           self._set(k, v)
+
+      elif is_strict:
+        raise KeyError('The key {!r} does not exist in {!r}. '
+                       'To extend the existing keys, use '
+                       '`override` with `is_strict` = False.'.format(
+                           k, type(self)))
+      else:
+        self._set(k, v)
 
   def as_dict(self):
     """Returns a dict representation of params_dict.ParamsDict.
@@ -301,6 +298,5 @@ class Config(params_dict.ParamsDict):
   def from_args(cls, *args, **kwargs):
     """Builds a config from the given list of arguments."""
     attributes = list(cls.__annotations__.keys())
-    default_params = {a: p for a, p in zip(attributes, args)}
-    default_params.update(kwargs)
+    default_params = dict(zip(attributes, args)) | kwargs
     return cls(default_params=default_params)

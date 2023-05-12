@@ -62,7 +62,7 @@ def distribution_strategy_combinations() -> Iterable[Tuple[Any, ...]]:
 
 def get_params_override(params_override: Mapping[str, Any]) -> str:
   """Converts params_override dict to string command."""
-  return '--params_override=' + json.dumps(params_override)
+  return f'--params_override={json.dumps(params_override)}'
 
 
 def basic_params_override(dtype: str = 'float32') -> MutableMapping[str, Any]:
@@ -128,8 +128,8 @@ class ClassifierTest(tf.test.TestCase, parameterized.TestCase):
     model_dir = self.create_tempdir().full_path
     base_flags = [
         '--data_dir=not_used',
-        '--model_type=' + model,
-        '--dataset=' + dataset,
+        f'--model_type={model}',
+        f'--dataset={dataset}',
     ]
     train_and_eval_flags = base_flags + [
         get_params_override(basic_params_override()),
@@ -161,8 +161,8 @@ class ClassifierTest(tf.test.TestCase, parameterized.TestCase):
     model_dir = self.create_tempdir().full_path
     base_flags = [
         '--data_dir=not_used',
-        '--model_type=' + model,
-        '--dataset=' + dataset,
+        f'--model_type={model}',
+        f'--dataset={dataset}',
     ]
     train_and_eval_flags = base_flags + [
         get_params_override(basic_params_override(dtype)),
@@ -205,8 +205,8 @@ class ClassifierTest(tf.test.TestCase, parameterized.TestCase):
     model_dir = self.create_tempdir().full_path
     base_flags = [
         '--data_dir=not_used',
-        '--model_type=' + model,
-        '--dataset=' + dataset,
+        f'--model_type={model}',
+        f'--dataset={dataset}',
     ]
     train_and_eval_flags = base_flags + [
         get_params_override(basic_params_override(dtype)),
@@ -225,8 +225,8 @@ class ClassifierTest(tf.test.TestCase, parameterized.TestCase):
     extra_flags = [
         '--data_dir=not_used',
         '--mode=invalid_mode',
-        '--model_type=' + model,
-        '--dataset=' + dataset,
+        f'--model_type={model}',
+        f'--dataset={dataset}',
         get_params_override(basic_params_override()),
     ]
 

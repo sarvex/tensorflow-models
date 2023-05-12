@@ -28,110 +28,122 @@ from official.nlp.tasks import tagging
 @exp_factory.register_config_factory('bert/sentence_prediction')
 def bert_sentence_prediction() -> cfg.ExperimentConfig:
   r"""BERT GLUE."""
-  config = cfg.ExperimentConfig(
+  return cfg.ExperimentConfig(
       task=sentence_prediction.SentencePredictionConfig(
-          train_data=sentence_prediction_dataloader
-          .SentencePredictionDataConfig(),
-          validation_data=sentence_prediction_dataloader
-          .SentencePredictionDataConfig(
-              is_training=False, drop_remainder=False)),
+          train_data=sentence_prediction_dataloader.
+          SentencePredictionDataConfig(),
+          validation_data=sentence_prediction_dataloader.
+          SentencePredictionDataConfig(is_training=False,
+                                       drop_remainder=False),
+      ),
       trainer=cfg.TrainerConfig(
           optimizer_config=optimization.OptimizationConfig({
               'optimizer': {
                   'type': 'adamw',
                   'adamw': {
                       'weight_decay_rate':
-                          0.01,
-                      'exclude_from_weight_decay':
-                          ['LayerNorm', 'layer_norm', 'bias'],
-                  }
+                      0.01,
+                      'exclude_from_weight_decay': [
+                          'LayerNorm',
+                          'layer_norm',
+                          'bias',
+                      ],
+                  },
               },
               'learning_rate': {
                   'type': 'polynomial',
                   'polynomial': {
                       'initial_learning_rate': 3e-5,
                       'end_learning_rate': 0.0,
-                  }
+                  },
               },
               'warmup': {
                   'type': 'polynomial'
-              }
+              },
           })),
       restrictions=[
           'task.train_data.is_training != None',
-          'task.validation_data.is_training != None'
-      ])
-  return config
+          'task.validation_data.is_training != None',
+      ],
+  )
 
 
 @exp_factory.register_config_factory('bert/squad')
 def bert_squad() -> cfg.ExperimentConfig:
   """BERT Squad V1/V2."""
-  config = cfg.ExperimentConfig(
+  return cfg.ExperimentConfig(
       task=question_answering.QuestionAnsweringConfig(
           train_data=question_answering_dataloader.QADataConfig(),
-          validation_data=question_answering_dataloader.QADataConfig()),
+          validation_data=question_answering_dataloader.QADataConfig(),
+      ),
       trainer=cfg.TrainerConfig(
           optimizer_config=optimization.OptimizationConfig({
               'optimizer': {
                   'type': 'adamw',
                   'adamw': {
                       'weight_decay_rate':
-                          0.01,
-                      'exclude_from_weight_decay':
-                          ['LayerNorm', 'layer_norm', 'bias'],
-                  }
+                      0.01,
+                      'exclude_from_weight_decay': [
+                          'LayerNorm',
+                          'layer_norm',
+                          'bias',
+                      ],
+                  },
               },
               'learning_rate': {
                   'type': 'polynomial',
                   'polynomial': {
                       'initial_learning_rate': 8e-5,
                       'end_learning_rate': 0.0,
-                  }
+                  },
               },
               'warmup': {
                   'type': 'polynomial'
-              }
+              },
           })),
       restrictions=[
           'task.train_data.is_training != None',
-          'task.validation_data.is_training != None'
-      ])
-  return config
+          'task.validation_data.is_training != None',
+      ],
+  )
 
 
 @exp_factory.register_config_factory('bert/tagging')
 def bert_tagging() -> cfg.ExperimentConfig:
   """BERT tagging task."""
-  config = cfg.ExperimentConfig(
+  return cfg.ExperimentConfig(
       task=tagging.TaggingConfig(
           train_data=tagging_dataloader.TaggingDataConfig(),
           validation_data=tagging_dataloader.TaggingDataConfig(
-              is_training=False, drop_remainder=False)),
+              is_training=False, drop_remainder=False),
+      ),
       trainer=cfg.TrainerConfig(
           optimizer_config=optimization.OptimizationConfig({
               'optimizer': {
                   'type': 'adamw',
                   'adamw': {
                       'weight_decay_rate':
-                          0.01,
-                      'exclude_from_weight_decay':
-                          ['LayerNorm', 'layer_norm', 'bias'],
-                  }
+                      0.01,
+                      'exclude_from_weight_decay': [
+                          'LayerNorm',
+                          'layer_norm',
+                          'bias',
+                      ],
+                  },
               },
               'learning_rate': {
                   'type': 'polynomial',
                   'polynomial': {
                       'initial_learning_rate': 8e-5,
                       'end_learning_rate': 0.0,
-                  }
+                  },
               },
               'warmup': {
                   'type': 'polynomial'
-              }
+              },
           })),
       restrictions=[
           'task.train_data.is_training != None',
           'task.validation_data.is_training != None',
-      ])
-  return config
+      ],
+  )

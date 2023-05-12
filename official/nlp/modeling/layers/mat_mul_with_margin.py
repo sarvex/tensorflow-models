@@ -61,7 +61,7 @@ class MatMulWithMargin(tf.keras.layers.Layer):
     config = {
         'logit_scale': self.logit_scale,
         'logit_margin': self.logit_margin}
-    config.update(super(MatMulWithMargin, self).get_config())
+    config |= super(MatMulWithMargin, self).get_config()
     return config
 
   @classmethod

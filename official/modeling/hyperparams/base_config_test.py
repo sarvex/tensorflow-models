@@ -84,7 +84,7 @@ class BaseConfigTest(parameterized.TestCase, tf.test.TestCase):
     config = base_config.Config({'key': v})
     back = config.as_dict()['key']
     self.assertEqual(pprint.pformat(back), pprint.pformat(v))
-    self.assertHasSameTypes(config.key, v, msg='=%s v' % pprint.pformat(v))
+    self.assertHasSameTypes(config.key, v, msg=f'={pprint.pformat(v)} v')
 
   def test_invalid_keys(self):
     params = base_config.Config()

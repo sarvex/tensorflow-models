@@ -49,8 +49,7 @@ _BOUNDARY_SCALE = 1.1
 
 def _get_example_length(example):
   """Returns the maximum length between the example inputs and targets."""
-  length = tf.maximum(tf.shape(example[0])[0], tf.shape(example[1])[0])
-  return length
+  return tf.maximum(tf.shape(example[0])[0], tf.shape(example[1])[0])
 
 
 def _create_min_max_boundaries(max_length,
@@ -115,7 +114,7 @@ def _batch_examples(dataset, batch_size, max_length):
   bucket_batch_sizes = [int(batch_size) // x for x in buckets_max]
 
   # Validates bucket batch sizes.
-  if any([batch_size <= 0 for batch_size in bucket_batch_sizes]):
+  if any(batch_size <= 0 for batch_size in bucket_batch_sizes):
     raise ValueError(
         'The token budget, global batch size, is too small to yeild 0 bucket '
         'window: %s' % str(bucket_batch_sizes))
@@ -225,7 +224,7 @@ class WMTDataLoader(data_loader.DataLoader):
   def _maybe_truncate(self, inputs):
     truncated_inputs = {}
     for k, v in inputs.items():
-      if k == 'inputs' or k == 'targets':
+      if k in ['inputs', 'targets']:
         truncated_inputs[k] = tf.pad(
             v[:self._max_seq_length - 1], [[0, 1]],
             constant_values=1) if tf.shape(v)[0] > self._max_seq_length else v

@@ -138,11 +138,10 @@ class TransformerScaffold(tf.keras.layers.Layer):
     def get_layer_instance(instance_or_cls, config, default_config):
       if isinstance(instance_or_cls, tf.keras.layers.Layer):
         return instance_or_cls
+      if config is None:
+        return instance_or_cls(**default_config)
       else:
-        if config is None:
-          return instance_or_cls(**default_config)
-        else:
-          return instance_or_cls(**config)
+        return instance_or_cls(**config)
 
     default_attention_cfg = {
         "num_heads": self._num_heads,
@@ -286,20 +285,17 @@ class TransformerScaffold(tf.keras.layers.Layer):
       # and is always fp32 for now. Cast layer_output to fp32 for the subsequent
       # add.
       layer_output = tf.cast(layer_output, tf.float32)
-      if self._norm_first:
-        layer_output = source_attention_output + layer_output
-      else:
-        layer_output = self._output_layer_norm(layer_output + attention_output,
-                                               training=training)
+      layer_output = (source_attention_output + layer_output
+                      if self._norm_first else self._output_layer_norm(
+                          layer_output + attention_output, training=training))
+    elif self._norm_first:
+      # if norm_first, assume the feedforward block will not apply layer norm
+      layer_output = self._feedforward_block(attention_output,
+                                             training=training)
+      layer_output += source_attention_output
     else:
-      if self._norm_first:
-        # if norm_first, assume the feedforward block will not apply layer norm
-        layer_output = self._feedforward_block(attention_output,
-                                               training=training)
-        layer_output += source_attention_output
-      else:
-        # if not norm_first, assume that the feedforwad does apply layer norm
-        layer_output = self._feedforward_block(attention_output,
-                                               training=training)
+      # if not norm_first, assume that the feedforwad does apply layer norm
+      layer_output = self._feedforward_block(attention_output,
+                                             training=training)
 
     return layer_output

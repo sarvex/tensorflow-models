@@ -54,9 +54,10 @@ def expand_1_axis(w: np.ndarray,
   Returns:
     Expanded numpy array.
   """
-  assert axis in (0, -1), (
-      "Only support expanding the first or the last dimension. "
-      "Got: {}".format(axis))
+  assert axis in {
+      0,
+      -1,
+  }, f"Only support expanding the first or the last dimension. Got: {axis}"
 
   rank = len(w.shape)
 
@@ -70,8 +71,7 @@ def expand_1_axis(w: np.ndarray,
                       [w.shape[0]] + [1] * (rank - 2) + [w.shape[-1]])
 
   d_w *= sign_flip
-  w_expand = (np.repeat(w, 2, axis=axis) + d_w) / 2
-  return w_expand
+  return (np.repeat(w, 2, axis=axis) + d_w) / 2
 
 
 def expand_2_axes(w: np.ndarray,
@@ -100,8 +100,7 @@ def expand_2_axes(w: np.ndarray,
                       [w.shape[0]] + [1] * (rank - 2) + [w.shape[-1] * 2])
   d_w *= sign_flip
 
-  w_expand = (np.repeat(np.repeat(w, 2, axis=0), 2, axis=-1) + d_w) / 2
-  return w_expand
+  return (np.repeat(np.repeat(w, 2, axis=0), 2, axis=-1) + d_w) / 2
 
 
 def var_to_var(var_from: tf.Variable,
@@ -145,7 +144,7 @@ def var_to_var(var_from: tf.Variable,
     var_to.assign(expand_2_axes(var_from.numpy(), epsilon=epsilon))
 
   else:
-    raise ValueError("Shape not supported, {}, {}".format(shape_from, shape_to))
+    raise ValueError(f"Shape not supported, {shape_from}, {shape_to}")
 
 
 def model_to_model_2x_wide(model_from: tf.Module,

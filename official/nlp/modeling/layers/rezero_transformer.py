@@ -92,16 +92,13 @@ class ReZeroTransformer(tf.keras.layers.Layer):
       expected_mask_tensor_shape = tf.TensorShape(
           [batch_size, sequence_length, sequence_length])
       if not expected_mask_tensor_shape.is_compatible_with(mask_tensor_shape):
-        raise ValueError("When passing a mask tensor to TransformerLayer, the "
-                         "mask tensor must be of shape [batch, "
-                         "sequence_length, sequence_length] (here %s). Got a "
-                         "mask tensor of shape %s." %
-                         (expected_mask_tensor_shape, mask_tensor_shape))
+        raise ValueError(
+            f"When passing a mask tensor to TransformerLayer, the mask tensor must be of shape [batch, sequence_length, sequence_length] (here {expected_mask_tensor_shape}). Got a mask tensor of shape {mask_tensor_shape}."
+        )
     if hidden_size % self._num_heads != 0:
       raise ValueError(
           "The input size (%d) is not a multiple of the number of attention "
           "heads (%d)" % (hidden_size, self._num_heads))
-    self._attention_head_size = int(hidden_size // self._num_heads)
     common_kwargs = dict(
         kernel_initializer=self._kernel_initializer,
         bias_initializer=self._bias_initializer,
@@ -110,6 +107,7 @@ class ReZeroTransformer(tf.keras.layers.Layer):
         activity_regularizer=self._activity_regularizer,
         kernel_constraint=self._kernel_constraint,
         bias_constraint=self._bias_constraint)
+    self._attention_head_size = int(hidden_size // self._num_heads)
     self._attention_layer = tf.keras.layers.MultiHeadAttention(
         num_heads=self._num_heads,
         key_dim=self._attention_head_size,

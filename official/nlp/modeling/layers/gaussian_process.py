@@ -207,21 +207,16 @@ class RandomFeatureGaussianProcess(tf.keras.layers.Layer):
           dtype=self.dtype,
           name=name)
 
-    if self.gp_kernel_type.lower() == 'linear':
-      custom_random_feature_layer = tf.keras.layers.Lambda(
-          lambda x: x, name=name)
-    else:
-      # Use user-supplied configurations.
-      custom_random_feature_layer = tf.keras.layers.Dense(
-          units=self.num_inducing,
-          use_bias=True,
-          activation=self.custom_random_features_activation,
-          kernel_initializer=self.custom_random_features_initializer,
-          bias_initializer=self.random_features_bias_initializer,
-          trainable=False,
-          name=name)
-
-    return custom_random_feature_layer
+    return (tf.keras.layers.Lambda(lambda x: x, name=name) if
+            self.gp_kernel_type.lower() == 'linear' else tf.keras.layers.Dense(
+                units=self.num_inducing,
+                use_bias=True,
+                activation=self.custom_random_features_activation,
+                kernel_initializer=self.custom_random_features_initializer,
+                bias_initializer=self.random_features_bias_initializer,
+                trainable=False,
+                name=name,
+            ))
 
   def reset_covariance_matrix(self):
     """Resets covariance matrix of the GP layer.
@@ -413,8 +408,7 @@ class LaplaceRandomFeatureCovariance(tf.keras.layers.Layer):
     # Computes the covariance matrix of the gp prediction.
     cov_feature_product = tf.matmul(
         feature_cov_matrix, gp_feature, transpose_b=True) * self.ridge_penalty
-    gp_cov_matrix = tf.matmul(gp_feature, cov_feature_product)
-    return gp_cov_matrix
+    return tf.matmul(gp_feature, cov_feature_product)
 
   def _get_training_value(self, training=None):
     if training is None:
@@ -441,20 +435,17 @@ class LaplaceRandomFeatureCovariance(tf.keras.layers.Layer):
         shape (batch_size, batch_size).
     """
     batch_size = tf.shape(inputs)[0]
-    training = self._get_training_value(training)
-
-    if training:
-      # Define and register the update op for feature precision matrix.
-      precision_matrix_update_op = self.make_precision_matrix_update_op(
-          gp_feature=inputs,
-          logits=logits,
-          precision_matrix=self.precision_matrix)
-      self.add_update(precision_matrix_update_op)
-      # Return null estimate during training.
-      return tf.eye(batch_size, dtype=self.dtype)
-    else:
+    if not (training := self._get_training_value(training)):
       # Return covariance estimate during inference.
       return self.compute_predictive_covariance(gp_feature=inputs)
+    # Define and register the update op for feature precision matrix.
+    precision_matrix_update_op = self.make_precision_matrix_update_op(
+        gp_feature=inputs,
+        logits=logits,
+        precision_matrix=self.precision_matrix)
+    self.add_update(precision_matrix_update_op)
+    # Return null estimate during training.
+    return tf.eye(batch_size, dtype=self.dtype)
 
 
 def mean_field_logits(logits, covariance_matrix=None, mean_field_factor=1.):

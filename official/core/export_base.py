@@ -119,8 +119,8 @@ def export(export_module: ExportModule,
       }
     else:
       raise ValueError(
-          "If the function_keys is a list, it must contain a single element. %s"
-          % function_keys)
+          f"If the function_keys is a list, it must contain a single element. {function_keys}"
+      )
 
   signatures = export_module.get_inference_signatures(function_keys)
   if timestamped:

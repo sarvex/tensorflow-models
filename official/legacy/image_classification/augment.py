@@ -528,8 +528,7 @@ def wrap(image: tf.Tensor) -> tf.Tensor:
   """Returns 'image' with an extra channel set to all 1s."""
   shape = tf.shape(image)
   extended_channel = tf.ones([shape[0], shape[1], 1], image.dtype)
-  extended = tf.concat([image, extended_channel], axis=2)
-  return extended
+  return tf.concat([image, extended_channel], axis=2)
 
 
 def unwrap(image: tf.Tensor, replace: int) -> tf.Tensor:
@@ -573,8 +572,7 @@ def unwrap(image: tf.Tensor, replace: int) -> tf.Tensor:
 def _randomly_negate_tensor(tensor):
   """With 50% prob turn the tensor negative."""
   should_flip = tf.cast(tf.floor(tf.random.uniform([]) + 0.5), tf.bool)
-  final_tensor = tf.cond(should_flip, lambda: tensor, lambda: -tensor)
-  return final_tensor
+  return tf.cond(should_flip, lambda: tensor, lambda: -tensor)
 
 
 def _rotate_level_to_arg(level: float):
@@ -604,7 +602,7 @@ def _shear_level_to_arg(level: float):
 
 
 def _translate_level_to_arg(level: float, translate_const: float):
-  level = (level / _MAX_LEVEL) * float(translate_const)
+  level = level / _MAX_LEVEL * translate_const
   # Flip level to negative with 50% chance.
   level = _randomly_negate_tensor(level)
   return (level,)
@@ -621,9 +619,7 @@ def _apply_func_with_prob(func: Any, image: tf.Tensor, args: Any, prob: float):
   # Apply the function with probability `prob`.
   should_apply_op = tf.cast(
       tf.floor(tf.random.uniform([], dtype=tf.float32) + prob), tf.bool)
-  augmented_image = tf.cond(should_apply_op, lambda: func(image, *args),
-                            lambda: image)
-  return augmented_image
+  return tf.cond(should_apply_op, lambda: func(image, *args), lambda: image)
 
 
 def select_and_apply_random_policy(policies: Any, image: tf.Tensor):
@@ -679,7 +675,7 @@ def level_to_arg(cutout_const: float, translate_const: float):
   cutout_arg = lambda level: _mult_to_arg(level, cutout_const)
   translate_arg = lambda level: _translate_level_to_arg(level, translate_const)
 
-  args = {
+  return {
       'AutoContrast': no_arg,
       'Equalize': no_arg,
       'Invert': no_arg,
@@ -697,7 +693,6 @@ def level_to_arg(cutout_const: float, translate_const: float):
       'TranslateX': translate_arg,
       'TranslateY': translate_arg,
   }
-  return args
 
 
 def _parse_policy_info(name: Text, prob: float, level: float,
@@ -767,13 +762,12 @@ class AutoAugment(ImageAugment):
       }
 
     if augmentation_name not in self.available_policies:
-      raise ValueError(
-          'Invalid augmentation_name: {}'.format(augmentation_name))
+      raise ValueError(f'Invalid augmentation_name: {augmentation_name}')
 
     self.augmentation_name = augmentation_name
     self.policies = self.available_policies[augmentation_name]
-    self.cutout_const = float(cutout_const)
-    self.translate_const = float(translate_const)
+    self.cutout_const = cutout_const
+    self.translate_const = translate_const
 
   def distort(self, image: tf.Tensor) -> tf.Tensor:
     """Applies the AutoAugment policy to `image`.
@@ -840,11 +834,7 @@ class AutoAugment(ImageAugment):
       the policy.
     """
 
-    # TODO(dankondratyuk): tensorflow_addons defines custom ops, which
-    # for some reason are not included when building/linking
-    # This results in the error, "Op type not registered
-    # 'Addons>ImageProjectiveTransformV2' in binary" when running on borg TPUs
-    policy = [
+    return [
         [('Equalize', 0.8, 1), ('ShearY', 0.8, 4)],
         [('Color', 0.4, 9), ('Equalize', 0.6, 3)],
         [('Color', 0.4, 1), ('Rotate', 0.6, 8)],
@@ -871,13 +861,12 @@ class AutoAugment(ImageAugment):
         [('Solarize', 0.6, 8), ('Equalize', 0.6, 1)],
         [('Color', 0.8, 6), ('Rotate', 0.4, 5)],
     ]
-    return policy
 
   @staticmethod
   def policy_simple():
     """Same as `policy_v0`, except with custom ops removed."""
 
-    policy = [
+    return [
         [('Color', 0.4, 9), ('Equalize', 0.6, 3)],
         [('Solarize', 0.8, 3), ('Equalize', 0.4, 7)],
         [('Solarize', 0.4, 2), ('Solarize', 0.6, 2)],
@@ -892,15 +881,13 @@ class AutoAugment(ImageAugment):
         [('Posterize', 0.8, 2), ('Solarize', 0.6, 10)],
         [('Solarize', 0.6, 8), ('Equalize', 0.6, 1)],
     ]
-    return policy
 
   @staticmethod
   def policy_test():
     """Autoaugment test policy for debugging."""
-    policy = [
+    return [
         [('TranslateX', 1.0, 4), ('Equalize', 1.0, 10)],
     ]
-    return policy
 
 
 class RandAugment(ImageAugment):
@@ -929,9 +916,9 @@ class RandAugment(ImageAugment):
     super(RandAugment, self).__init__()
 
     self.num_layers = num_layers
-    self.magnitude = float(magnitude)
-    self.cutout_const = float(cutout_const)
-    self.translate_const = float(translate_const)
+    self.magnitude = magnitude
+    self.cutout_const = cutout_const
+    self.translate_const = translate_const
     self.available_ops = [
         'AutoContrast', 'Equalize', 'Invert', 'Rotate', 'Posterize', 'Solarize',
         'Color', 'Contrast', 'Brightness', 'Sharpness', 'ShearX', 'ShearY',

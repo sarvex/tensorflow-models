@@ -102,10 +102,9 @@ def _generalized_kernel(x, projection_matrix, f, h):
 
   if projection_matrix is None:
     return h(x) * f(x)
-  else:
-    x_projected = tf.einsum("BTNH,MH->BTNM", x, projection_matrix)
-    return h(x) * f(x_projected) / tf.math.sqrt(
-        tf.cast(tf.shape(projection_matrix)[0], tf.float32))
+  x_projected = tf.einsum("BTNH,MH->BTNM", x, projection_matrix)
+  return h(x) * f(x_projected) / tf.math.sqrt(
+      tf.cast(tf.shape(projection_matrix)[0], tf.float32))
 
 
 # pylint: disable=g-long-lambda
@@ -219,10 +218,7 @@ class KernelAttention(tf.keras.layers.MultiHeadAttention):
     # 2. no redraw
     self._seed = seed
     super().__init__(**kwargs)
-    if scale is None:
-      self._scale = 1.0 / math.sqrt(float(self._key_dim))
-    else:
-      self._scale = scale
+    self._scale = 1.0 / math.sqrt(float(self._key_dim)) if scale is None else scale
     self._projection_matrix = None
     if num_random_features > 0:
       self._projection_matrix = create_projection_matrix(
@@ -291,15 +287,13 @@ class KernelAttention(tf.keras.layers.MultiHeadAttention):
     if is_short_seq:
       attention_scores = tf.einsum("BTNH,BSNH->BTSN", query, key)
       attention_scores = tf.nn.softmax(attention_scores, axis=2)
-      attention_output = tf.einsum("BTSN,BSNH->BTNH", attention_scores, value)
+      return tf.einsum("BTSN,BSNH->BTNH", attention_scores, value)
     else:
       kv = tf.einsum("BSNH,BSND->BNDH", key, value)
       denominator = 1.0 / (
           tf.einsum("BTNH,BNH->BTN", query, tf.reduce_sum(key, axis=1)) +
           _NUMERIC_STABLER)
-      attention_output = tf.einsum(
-          "BTNH,BNDH,BTN->BTND", query, kv, denominator)
-    return attention_output
+      return tf.einsum("BTNH,BNDH,BTN->BTND", query, kv, denominator)
 
   def _build_from_signature(self, query, value, key=None):
     super()._build_from_signature(query=query, value=value, key=key)  # pytype: disable=attribute-error  # typed-keras

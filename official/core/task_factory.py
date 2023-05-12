@@ -66,5 +66,4 @@ def get_task(task_config, **kwargs):
 # The user-visible get_task() is defined after classes have been registered.
 # TODO(b/158741360): Add type annotations once pytype checks across modules.
 def get_task_cls(task_config_cls):
-  task_cls = registry.lookup(_REGISTERED_TASK_CLS, task_config_cls)
-  return task_cls
+  return registry.lookup(_REGISTERED_TASK_CLS, task_config_cls)

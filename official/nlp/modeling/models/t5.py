@@ -85,10 +85,7 @@ def dense_gradient(x: tf.Tensor):
   """
 
   def grad(dy):
-    if isinstance(dy, tf.IndexedSlices):
-      return tf.convert_to_tensor(dy)
-    else:
-      return dy
+    return tf.convert_to_tensor(dy) if isinstance(dy, tf.IndexedSlices) else dy
 
   return x, grad
 
@@ -175,21 +172,20 @@ class Embed(Module):
       The output shape follows the input, with an additional `features`
       dimension appended.
     """
-    if one_hot:
-      flat_inputs = tf.reshape(inputs, [-1])
-      one_hot_data = tf.one_hot(
-          flat_inputs, depth=self.vocab_size, dtype=self.compute_dtype)
-      embeddings = tf.matmul(
-          one_hot_data,
-          self.read_variable(self.embeddings, as_dtype=self.compute_dtype))
-      input_shape = tf_utils.get_shape_list(inputs)
-      embeddings = tf.reshape(embeddings, input_shape + [self.features])
-      return embeddings
-    else:
+    if not one_hot:
       return tf.nn.embedding_lookup(
           dense_gradient(
               self.read_variable(self.embeddings, as_dtype=self.compute_dtype)),
           inputs)
+    flat_inputs = tf.reshape(inputs, [-1])
+    one_hot_data = tf.one_hot(
+        flat_inputs, depth=self.vocab_size, dtype=self.compute_dtype)
+    embeddings = tf.matmul(
+        one_hot_data,
+        self.read_variable(self.embeddings, as_dtype=self.compute_dtype))
+    input_shape = tf_utils.get_shape_list(inputs)
+    embeddings = tf.reshape(embeddings, input_shape + [self.features])
+    return embeddings
 
   def attend(self, query):
     """Attends over the embedding using a query tensor.
@@ -423,8 +419,7 @@ class FFN(Module):
       for idx, act_fn in enumerate(activations):
         if (act_fn is not None and act_fn != "linear" and
             act_fn not in self.activation_map):
-          raise ValueError("Invalid activation function string is passed: %s" %
-                           act_fn)
+          raise ValueError(f"Invalid activation function string is passed: {act_fn}")
         dense_name = "wi" if len(activations) == 1 else f"wi_{idx}"
         self.wi.append(
             Linear(

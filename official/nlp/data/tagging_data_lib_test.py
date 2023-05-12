@@ -75,9 +75,10 @@ class TaggingDataLibTest(tf.test.TestCase, parameterized.TestCase):
     # Write fake test files.
     for lang in processor.supported_languages:
       _create_fake_file(
-          os.path.join(input_data_dir, "test-%s.tsv" % lang),
+          os.path.join(input_data_dir, f"test-{lang}.tsv"),
           processor.get_labels(),
-          is_test=True)
+          is_test=True,
+      )
 
     output_path = os.path.join(self.get_temp_dir(), task_type, "output")
     tokenizer = tokenization.FullTokenizer(
@@ -93,14 +94,12 @@ class TaggingDataLibTest(tf.test.TestCase, parameterized.TestCase):
         text_preprocessing=tokenization.convert_to_unicode)
 
     self.assertEqual(metadata["train_data_size"], 5)
-    files = tf.io.gfile.glob(output_path + "/*")
-    expected_files = []
-    expected_files.append(os.path.join(output_path, "train.tfrecord"))
+    files = tf.io.gfile.glob(f"{output_path}/*")
+    expected_files = [os.path.join(output_path, "train.tfrecord")]
     expected_files.append(os.path.join(output_path, "eval.tfrecord"))
-    for lang in processor.supported_languages:
-      expected_files.append(
-          os.path.join(output_path, "test_%s.tfrecord" % lang))
-
+    expected_files.extend(
+        os.path.join(output_path, f"test_{lang}.tfrecord")
+        for lang in processor.supported_languages)
     self.assertCountEqual(files, expected_files)
 
 

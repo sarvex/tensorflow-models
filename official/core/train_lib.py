@@ -121,16 +121,14 @@ def run_experiment(
     elif mode == 'continuous_eval':
 
       def timeout_fn():
-        if trainer.global_step.numpy() >= params.trainer.train_steps:
-          return True
-        return False
+        return trainer.global_step.numpy() >= params.trainer.train_steps
 
       controller.evaluate_continuously(
           steps=params.trainer.validation_steps,
           timeout=params.trainer.continuous_eval_timeout,
           timeout_fn=timeout_fn)
     else:
-      raise NotImplementedError('The mode is not implemented: %s' % mode)
+      raise NotImplementedError(f'The mode is not implemented: {mode}')
 
   num_params = train_utils.try_count_params(trainer.model)
   if num_params is not None:

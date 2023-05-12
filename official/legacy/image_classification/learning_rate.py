@@ -104,9 +104,8 @@ class CosineDecayWithWarmup(tf.keras.optimizers.schedules.LearningRateSchedule):
                                              (total_steps - warmup_steps)) +
                                       1.0) / 2.0
 
-    learning_rate = tf.where(global_step < warmup_steps, linear_warmup,
-                             cosine_learning_rate)
-    return learning_rate
+    return tf.where(global_step < warmup_steps, linear_warmup,
+                    cosine_learning_rate)
 
   def get_config(self):
     return {

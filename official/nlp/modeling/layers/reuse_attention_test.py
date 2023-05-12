@@ -138,14 +138,12 @@ class ReuseMultiHeadAttentionTest(tf.test.TestCase, parameterized.TestCase):
       if reuse_attention == 0:
         self.assertLen(test_layer._query_dense.trainable_variables, 2)
       self.assertLen(test_layer._output_dense[0].trainable_variables, 2)
-      if len(test_layer._output_dense) == 2:
-        self.assertLen(test_layer._output_dense[1].trainable_variables, 1)
     else:
       if reuse_attention == 0:
         self.assertLen(test_layer._query_dense.trainable_variables, 1)
       self.assertLen(test_layer._output_dense[0].trainable_variables, 1)
-      if len(test_layer._output_dense) == 2:
-        self.assertLen(test_layer._output_dense[1].trainable_variables, 1)
+    if len(test_layer._output_dense) == 2:
+      self.assertLen(test_layer._output_dense[1].trainable_variables, 1)
 
   def test_initializer(self):
     """Test with a specified initializer."""

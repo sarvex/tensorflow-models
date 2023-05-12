@@ -34,7 +34,7 @@ class UnicodeRegex(object):
   def __init__(self):
     punctuation = self.property_chars("P")
     self.nondigit_punct_re = re.compile(r"([^\d])([" + punctuation + r"])")
-    self.punct_nondigit_re = re.compile(r"([" + punctuation + r"])([^\d])")
+    self.punct_nondigit_re = re.compile(f"([{punctuation}" + r"])([^\d])")
     self.symbol_re = re.compile("([" + self.property_chars("S") + "])")
 
   def property_chars(self, prefix):
@@ -135,8 +135,10 @@ def compute_bleu(reference_corpus,
     ref_ngram_counts = _get_ngrams_with_counter(references, max_order)
     translation_ngram_counts = _get_ngrams_with_counter(translations, max_order)
 
-    overlap = dict((ngram, min(count, translation_ngram_counts[ngram]))
-                   for ngram, count in ref_ngram_counts.items())
+    overlap = {
+        ngram: min(count, translation_ngram_counts[ngram])
+        for ngram, count in ref_ngram_counts.items()
+    }
 
     for ngram in overlap:
       matches_by_order[len(ngram) - 1] += overlap[ngram]

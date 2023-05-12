@@ -29,8 +29,7 @@ def generate_fake_input(batch_size=1, seq_len=5, vocab_size=10000, seed=0):
     fake_input.append([])
     for _ in range(seq_len):
       fake_input[-1].append(np.random.randint(0, vocab_size))
-  fake_input = np.asarray(fake_input)
-  return fake_input
+  return np.asarray(fake_input)
 
 
 class MobileBertEncoderTest(parameterized.TestCase, tf.test.TestCase):
@@ -146,10 +145,8 @@ class MobileBertMaskedLMTest(tf.test.TestCase):
           num_attention_heads=4,
           word_embed_size=embedding_width)
 
-    # Create a maskedLM from the transformer stack.
-    test_layer = mobile_bert_layers.MobileBertMaskedLM(
+    return mobile_bert_layers.MobileBertMaskedLM(
         embedding_table=xformer_stack.get_embedding_table(), output=output)
-    return test_layer
 
   def test_layer_creation(self):
     vocab_size = 100

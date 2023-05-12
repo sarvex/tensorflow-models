@@ -69,9 +69,8 @@ def eval_squad(strategy, input_meta_data):
   tokenizer = tokenization.FullSentencePieceTokenizer(
       sp_model_file=FLAGS.sp_model_file)
 
-  eval_metrics = run_squad_helper.eval_squad(
-      strategy, input_meta_data, tokenizer, bert_config, squad_lib_sp)
-  return eval_metrics
+  return run_squad_helper.eval_squad(strategy, input_meta_data, tokenizer,
+                                     bert_config, squad_lib_sp)
 
 
 def export_squad(model_export_path, input_meta_data):

@@ -74,10 +74,7 @@ def _bert_name_replacement(var_name, name_replacements):
 
 def _has_exclude_patterns(name, exclude_patterns):
   """Checks if a string contains substrings that match patterns to exclude."""
-  for p in exclude_patterns:
-    if p in name:
-      return True
-  return False
+  return any(p in name for p in exclude_patterns)
 
 
 def _get_permutation(name, permutations):
@@ -93,7 +90,7 @@ def _get_permutation(name, permutations):
 def _get_new_shape(name, shape, num_heads):
   """Checks whether a variable requires reshape by pattern matching."""
   if "self_attention/attention_output/kernel" in name:
-    return tuple([num_heads, shape[0] // num_heads, shape[1]])
+    return num_heads, shape[0] // num_heads, shape[1]
   if "self_attention/attention_output/bias" in name:
     return shape
 
@@ -103,9 +100,9 @@ def _get_new_shape(name, shape, num_heads):
   for pattern in patterns:
     if pattern in name:
       if "kernel" in name:
-        return tuple([shape[0], num_heads, shape[1] // num_heads])
+        return shape[0], num_heads, shape[1] // num_heads
       if "bias" in name:
-        return tuple([num_heads, shape[0] // num_heads])
+        return num_heads, shape[0] // num_heads
   return None
 
 
@@ -174,9 +171,7 @@ def convert(checkpoint_from_path,
                         var_name, tensor.shape, new_shape)
         tensor = np.reshape(tensor, new_shape)
 
-      # See if we need to permute the underlying tensor.
-      permutation = _get_permutation(var_name, permutations)
-      if permutation:
+      if permutation := _get_permutation(var_name, permutations):
         tensor = np.transpose(tensor, permutation)
 
       # Create a new variable with the possibly-reshaped or transposed tensor.

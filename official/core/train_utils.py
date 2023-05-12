@@ -123,8 +123,9 @@ class BestCheckpointExporter:
     self._metric_name = metric_name.split('|')
     self._metric_comp = metric_comp
     if self._metric_comp not in ('lower', 'higher'):
-      raise ValueError('best checkpoint metric comp must be one of '
-                       'higher, lower. Got: {}'.format(self._metric_comp))
+      raise ValueError(
+          f'best checkpoint metric comp must be one of higher, lower. Got: {self._metric_comp}'
+      )
     tf.io.gfile.makedirs(os.path.dirname(self.best_ckpt_logs_path))
     self._best_ckpt_logs = self._maybe_load_best_eval_metric()
     self._checkpoint_manager = None
@@ -178,11 +179,10 @@ class BestCheckpointExporter:
         logging.info('[BestCheckpointExporter] '
                      'the new number is better since it is higher.')
         return True
-    else:  # self._metric_comp == 'lower':
-      if new_value < old_value:
-        logging.info('[BestCheckpointExporter] '
-                     'the new number is better since it is lower.')
-        return True
+    elif new_value < old_value:
+      logging.info('[BestCheckpointExporter] '
+                   'the new number is better since it is lower.')
+      return True
     return False
 
   def export_best_eval_metric(self, eval_logs, global_step):
@@ -313,8 +313,8 @@ def serialize_config(params: config_definitions.ExperimentConfig,
 
 def save_gin_config(filename_suffix: str, model_dir: str):
   """Serializes and saves the experiment config."""
-  gin_save_path = os.path.join(
-      model_dir, 'operative_config.{}.gin'.format(filename_suffix))
+  gin_save_path = os.path.join(model_dir,
+                               f'operative_config.{filename_suffix}.gin')
   logging.info('Saving gin configurations to %s', gin_save_path)
   tf.io.gfile.makedirs(model_dir)
   with tf.io.gfile.GFile(gin_save_path, 'w') as f:
@@ -332,10 +332,9 @@ def read_global_step_from_checkpoint(ckpt_file_path):
     global_step_maybe_restored = -1
 
   if global_step_maybe_restored == -1:
-    raise ValueError('global_step not found in checkpoint {}. '
-                     'If you want to run finetune eval jobs, you need to '
-                     'make sure that your pretrain model writes '
-                     'global_step in its checkpoints.'.format(ckpt_file_path))
+    raise ValueError(
+        f'global_step not found in checkpoint {ckpt_file_path}. If you want to run finetune eval jobs, you need to make sure that your pretrain model writes global_step in its checkpoints.'
+    )
   global_step_restored = global_step.numpy()
   logging.info('get global_step %d from checkpoint %s', global_step_restored,
                ckpt_file_path)
@@ -344,13 +343,11 @@ def read_global_step_from_checkpoint(ckpt_file_path):
 
 def write_json_summary(log_dir, global_step, eval_metrics):
   """Dump evaluation metrics to json file."""
-  serializable_dict = {}
-  for name, value in eval_metrics.items():
-    if hasattr(value, 'numpy'):
-      serializable_dict[name] = str(value.numpy())
-    else:
-      serializable_dict[name] = str(value)
-  output_json = os.path.join(log_dir, 'metrics-{}.json'.format(global_step))
+  serializable_dict = {
+      name: str(value.numpy()) if hasattr(value, 'numpy') else str(value)
+      for name, value in eval_metrics.items()
+  }
+  output_json = os.path.join(log_dir, f'metrics-{global_step}.json')
   logging.info('Evaluation results at pretrain step %d: %s', global_step,
                serializable_dict)
   with tf.io.gfile.GFile(output_json, 'w') as writer:
@@ -359,9 +356,10 @@ def write_json_summary(log_dir, global_step, eval_metrics):
 
 def write_summary(summary_writer, global_step, eval_metrics):
   """Write evaluation metrics to TF summary."""
-  numeric_dict = {}
-  for name, value in eval_metrics.items():
-    numeric_dict[name] = float(orbit.utils.get_value(value))
+  numeric_dict = {
+      name: float(orbit.utils.get_value(value))
+      for name, value in eval_metrics.items()
+  }
   with summary_writer.as_default():
     for name, value in numeric_dict.items():
       tf.summary.scalar(name, value, step=global_step)

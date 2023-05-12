@@ -275,33 +275,36 @@ class TFRecordPathTests(tf.test.TestCase):
         seq_length=2,
         reuse_length=1)
 
-    config1 = dict(
+    config1 = (dict(
         prefix="test",
         suffix="",
         bi_data=True,
         use_eod_token=False,
-        do_lower_case=True)
-    config1.update(base_kwargs)
+        do_lower_case=True,
+    )
+               | base_kwargs)
     expectation1 = "test_seqlen-2_reuse-1_bs-1_cores-1_uncased_bi.tfrecord"
     self.assertEqual(cpd.get_tfrecord_name(**config1), expectation1)
 
-    config2 = dict(
+    config2 = (dict(
         prefix="",
         suffix="test",
         bi_data=False,
         use_eod_token=False,
-        do_lower_case=False)
-    config2.update(base_kwargs)
+        do_lower_case=False,
+    )
+               | base_kwargs)
     expectation2 = "seqlen-2_reuse-1_bs-1_cores-1_cased_uni_test.tfrecord"
     self.assertEqual(cpd.get_tfrecord_name(**config2), expectation2)
 
-    config3 = dict(
+    config3 = (dict(
         prefix="",
         suffix="",
         use_eod_token=True,
         bi_data=False,
-        do_lower_case=True)
-    config3.update(base_kwargs)
+        do_lower_case=True,
+    )
+               | base_kwargs)
     expectation3 = "seqlen-2_reuse-1_bs-1_cores-1_uncased_eod_uni.tfrecord"
     self.assertEqual(cpd.get_tfrecord_name(**config3), expectation3)
 

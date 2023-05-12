@@ -86,7 +86,7 @@ def create_pretrain_dataset(input_patterns,
                                                              tf.int64)
   for input_pattern in input_patterns:
     if not tf.io.gfile.glob(input_pattern):
-      raise ValueError('%s does not match any files.' % input_pattern)
+      raise ValueError(f'{input_pattern} does not match any files.')
 
   dataset = tf.data.Dataset.list_files(input_patterns, shuffle=is_training)
 
@@ -135,10 +135,7 @@ def create_pretrain_dataset(input_patterns,
       x['position_ids'] = record['position_ids']
 
     # TODO(hongkuny): Remove the fake labels after migrating bert pretraining.
-    if output_fake_labels:
-      return (x, record['masked_lm_weights'])
-    else:
-      return x
+    return (x, record['masked_lm_weights']) if output_fake_labels else x
 
   dataset = dataset.map(
       _select_data_from_record,

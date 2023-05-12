@@ -76,13 +76,13 @@ def _create_mock_attention_data(
         value=tf.random.normal(shape=value_shape),
         key=tf.random.normal(shape=value_shape))
 
-  data.update(stream_data)
+  data |= stream_data
 
   if include_state:
     total_seq_length = seq_length + memory_length
     state_data = dict(
         state=tf.random.normal(shape=(batch_size, memory_length, value_dim)))
-    data.update(state_data)
+    data |= state_data
   else:
     total_seq_length = seq_length
 
@@ -95,7 +95,7 @@ def _create_mock_attention_data(
           query_attention_mask=mask_data)
     else:
       mask_data = dict(attention_mask=mask_data)
-    data.update(mask_data)
+    data |= mask_data
 
   if include_segment:
     segment_encoding_shape = (2, num_heads, key_dim)
@@ -106,7 +106,7 @@ def _create_mock_attention_data(
         segment_attention_bias=tf.random.normal(shape=attention_bias_shape),
         segment_encoding=tf.random.normal(shape=segment_encoding_shape),
         segment_matrix=segment_matrix)
-    data.update(segment_data)
+    data |= segment_data
 
   return data
 

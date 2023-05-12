@@ -42,7 +42,7 @@ def wmt_transformer_large() -> cfg.ExperimentConfig:
   token_batch_size = 24576
   encdecoder = translation.EncDecoder(
       num_attention_heads=16, intermediate_size=hidden_size * 4)
-  config = cfg.ExperimentConfig(
+  return cfg.ExperimentConfig(
       runtime=cfg.RuntimeConfig(enable_xla=True),
       task=translation.TranslationConfig(
           model=translation.ModelConfig(
@@ -50,7 +50,8 @@ def wmt_transformer_large() -> cfg.ExperimentConfig:
               decoder=encdecoder,
               embedding_width=hidden_size,
               padded_decode=True,
-              decode_max_length=100),
+              decode_max_length=100,
+          ),
           train_data=wmt_dataloader.WMTDataConfig(
               tfds_name='wmt14_translate/de-en',
               tfds_split='train',
@@ -59,7 +60,7 @@ def wmt_transformer_large() -> cfg.ExperimentConfig:
               is_training=True,
               global_batch_size=token_batch_size,
               static_batch=True,
-              max_seq_length=64
+              max_seq_length=64,
           ),
           validation_data=wmt_dataloader.WMTDataConfig(
               tfds_name='wmt14_translate/de-en',
@@ -94,18 +95,19 @@ def wmt_transformer_large() -> cfg.ExperimentConfig:
                   'power': {
                       'initial_learning_rate': learning_rate,
                       'power': -0.5,
-                  }
+                  },
               },
               'warmup': {
                   'type': 'linear',
                   'linear': {
                       'warmup_steps': warmup_steps,
-                      'warmup_learning_rate': 0.0
-                  }
-              }
-          })),
+                      'warmup_learning_rate': 0.0,
+                  },
+              },
+          }),
+      ),
       restrictions=[
           'task.train_data.is_training != None',
           'task.sentencepiece_model_path != None',
-      ])
-  return config
+      ],
+  )

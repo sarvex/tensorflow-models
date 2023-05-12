@@ -58,9 +58,7 @@ def build_model():
 
   probs = tf.keras.layers.Dense(10, activation='softmax')(y)
 
-  model = tf.keras.models.Model(image, probs, name='mnist')
-
-  return model
+  return tf.keras.models.Model(image, probs, name='mnist')
 
 
 @tfds.decode.make_decoder(output_dtype=tf.float32)
@@ -143,8 +141,7 @@ def run(flags_obj, datasets_override=None, strategy_override=None):
   eval_output = model.evaluate(
       eval_input_dataset, steps=num_eval_steps, verbose=2)
 
-  stats = common.build_stats(history, eval_output, callbacks)
-  return stats
+  return common.build_stats(history, eval_output, callbacks)
 
 
 def define_mnist_flags():

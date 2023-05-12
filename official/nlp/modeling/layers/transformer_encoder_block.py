@@ -123,8 +123,8 @@ class TransformerEncoderBlock(tf.keras.layers.Layer):
       input_tensor_shape = tf.TensorShape(input_shape[0])
     else:
       raise ValueError(
-          "The type of input shape argument is not supported, got: %s" %
-          type(input_shape))
+          f"The type of input shape argument is not supported, got: {type(input_shape)}"
+      )
     einsum_equation = "abc,cd->abd"
     if len(input_tensor_shape.as_list()) > 3:
       einsum_equation = "...bc,cd->...bd"

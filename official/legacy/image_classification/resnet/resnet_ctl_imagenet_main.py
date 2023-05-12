@@ -179,8 +179,7 @@ def run(flags_obj):
     resnet_controller.train(steps=per_epoch_steps * train_epochs)
   time_callback.on_train_end()
 
-  stats = build_stats(runnable, time_callback)
-  return stats
+  return build_stats(runnable, time_callback)
 
 
 def main(_):

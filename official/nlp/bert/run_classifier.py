@@ -306,7 +306,7 @@ def get_predictions_and_labels(strategy,
 
   def _run_evaluation(test_iterator):
     """Runs evaluation steps."""
-    preds, golds = list(), list()
+    preds, golds = [], []
     try:
       with tf.experimental.async_scope():
         while True:
@@ -342,9 +342,9 @@ def export_classifier(model_export_path, input_meta_data, bert_config,
     Export path is not specified, got an empty string or None.
   """
   if not model_export_path:
-    raise ValueError('Export path is not specified: %s' % model_export_path)
+    raise ValueError(f'Export path is not specified: {model_export_path}')
   if not model_dir:
-    raise ValueError('Export path is not specified: %s' % model_dir)
+    raise ValueError(f'Export path is not specified: {model_dir}')
 
   # Export uses float32 for now, even if training uses mixed precision.
   tf.keras.mixed_precision.set_global_policy('float32')
@@ -485,7 +485,7 @@ def custom_main(custom_callbacks=None, custom_metrics=None):
     return
 
   if FLAGS.mode != 'train_and_eval':
-    raise ValueError('Unsupported mode is specified: %s' % FLAGS.mode)
+    raise ValueError(f'Unsupported mode is specified: {FLAGS.mode}')
   train_input_fn = get_dataset_fn(
       FLAGS.train_data_path,
       input_meta_data['max_seq_length'],

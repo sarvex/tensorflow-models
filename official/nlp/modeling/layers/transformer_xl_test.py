@@ -67,17 +67,19 @@ def create_mock_transformer_xl_data(
 
   if include_biases:
     attention_bias_shape = (num_heads, head_size)
-    data.update(dict(
+    data |= dict(
         content_attention_bias=tf.random.normal(shape=attention_bias_shape),
         segment_attention_bias=tf.random.normal(shape=attention_bias_shape),
-        positional_attention_bias=tf.random.normal(shape=attention_bias_shape)))
+        positional_attention_bias=tf.random.normal(shape=attention_bias_shape),
+    )
 
   if two_stream:
-    data.update(dict(
-        query_stream=tf.random.normal(
-            shape=(batch_size, num_predictions, hidden_size)),
-        target_mapping=tf.random.normal(
-            shape=(batch_size, num_predictions, seq_length))))
+    data |= dict(
+        query_stream=tf.random.normal(shape=(batch_size, num_predictions,
+                                             hidden_size)),
+        target_mapping=tf.random.normal(shape=(batch_size, num_predictions,
+                                               seq_length)),
+    )
 
   if include_state:
     total_seq_length = seq_length + memory_length
@@ -85,8 +87,7 @@ def create_mock_transformer_xl_data(
       state_shape = (num_layers, batch_size, memory_length, hidden_size)
     else:
       state_shape = (batch_size, memory_length, hidden_size)
-    data.update(dict(
-        state=tf.random.normal(shape=state_shape)))
+    data |= dict(state=tf.random.normal(shape=state_shape))
   else:
     total_seq_length = seq_length
 

@@ -175,20 +175,20 @@ def conv2d_block(inputs: tf.Tensor,
       'strides': strides,
       'use_bias': use_bias,
       'padding': 'same',
-      'name': name + '_conv2d',
+      'name': f'{name}_conv2d',
       'kernel_regularizer': tf.keras.regularizers.l2(weight_decay),
       'bias_regularizer': tf.keras.regularizers.l2(weight_decay),
   }
 
   if depthwise:
     conv2d = tf.keras.layers.DepthwiseConv2D
-    init_kwargs.update({'depthwise_initializer': CONV_KERNEL_INITIALIZER})
+    init_kwargs['depthwise_initializer'] = CONV_KERNEL_INITIALIZER
   else:
     conv2d = tf.keras.layers.Conv2D
-    init_kwargs.update({
+    init_kwargs |= {
         'filters': conv_filters,
-        'kernel_initializer': CONV_KERNEL_INITIALIZER
-    })
+        'kernel_initializer': CONV_KERNEL_INITIALIZER,
+    }
 
   x = conv2d(**init_kwargs)(inputs)
 
@@ -198,11 +198,11 @@ def conv2d_block(inputs: tf.Tensor,
         axis=bn_axis,
         momentum=bn_momentum,
         epsilon=bn_epsilon,
-        name=name + '_bn')(
-            x)
+        name=f'{name}_bn',
+    )(x)
 
   if activation is not None:
-    x = tf.keras.layers.Activation(activation, name=name + '_activation')(x)
+    x = tf.keras.layers.Activation(activation, name=f'{name}_activation')(x)
   return x
 
 
@@ -241,7 +241,8 @@ def mb_conv_block(inputs: tf.Tensor,
         kernel_size=block.kernel_size,
         strides=block.strides,
         activation=activation,
-        name=prefix + 'fused')
+        name=f'{prefix}fused',
+    )
   else:
     if block.expand_ratio != 1:
       # Expansion phase
@@ -252,7 +253,8 @@ def mb_conv_block(inputs: tf.Tensor,
           config,
           kernel_size=kernel_size,
           activation=activation,
-          name=prefix + 'expand')
+          name=f'{prefix}expand',
+      )
 
     # Depthwise Convolution
     if use_depthwise:
@@ -264,7 +266,8 @@ def mb_conv_block(inputs: tf.Tensor,
           strides=block.strides,
           activation=activation,
           depthwise=True,
-          name=prefix + 'depthwise')
+          name=f'{prefix}depthwise',
+      )
 
   # Squeeze and Excitation phase
   if use_se:
@@ -277,8 +280,8 @@ def mb_conv_block(inputs: tf.Tensor,
     else:
       se_shape = (1, 1, filters)
 
-    se = tf.keras.layers.GlobalAveragePooling2D(name=prefix + 'se_squeeze')(x)
-    se = tf.keras.layers.Reshape(se_shape, name=prefix + 'se_reshape')(se)
+    se = tf.keras.layers.GlobalAveragePooling2D(name=f'{prefix}se_squeeze')(x)
+    se = tf.keras.layers.Reshape(se_shape, name=f'{prefix}se_reshape')(se)
 
     se = conv2d_block(
         se,
@@ -287,7 +290,8 @@ def mb_conv_block(inputs: tf.Tensor,
         use_bias=True,
         use_batch_norm=False,
         activation=activation,
-        name=prefix + 'se_reduce')
+        name=f'{prefix}se_reduce',
+    )
     se = conv2d_block(
         se,
         filters,
@@ -295,18 +299,21 @@ def mb_conv_block(inputs: tf.Tensor,
         use_bias=True,
         use_batch_norm=False,
         activation='sigmoid',
-        name=prefix + 'se_expand')
-    x = tf.keras.layers.multiply([x, se], name=prefix + 'se_excite')
+        name=f'{prefix}se_expand',
+    )
+    x = tf.keras.layers.multiply([x, se], name=f'{prefix}se_excite')
 
   # Output phase
-  x = conv2d_block(
-      x, block.output_filters, config, activation=None, name=prefix + 'project')
+  x = conv2d_block(x,
+                   block.output_filters,
+                   config,
+                   activation=None,
+                   name=f'{prefix}project')
 
   # Add identity so that quantization-aware training can insert quantization
   # ops correctly.
-  x = tf.keras.layers.Activation(
-      tf_utils.get_activation('identity'), name=prefix + 'id')(
-          x)
+  x = tf.keras.layers.Activation(tf_utils.get_activation('identity'),
+                                 name=f'{prefix}id')(x)
 
   if (block.id_skip and all(s == 1 for s in block.strides) and
       block.input_filters == block.output_filters):
@@ -315,11 +322,11 @@ def mb_conv_block(inputs: tf.Tensor,
       # The only difference between dropout and dropconnect in TF is scaling by
       # drop_connect_rate during training. See:
       # https://github.com/keras-team/keras/pull/9898#issuecomment-380577612
-      x = tf.keras.layers.Dropout(
-          drop_connect_rate, noise_shape=(None, 1, 1, 1), name=prefix + 'drop')(
-              x)
+      x = tf.keras.layers.Dropout(drop_connect_rate,
+                                  noise_shape=(None, 1, 1, 1),
+                                  name=f'{prefix}drop')(x)
 
-    x = tf.keras.layers.add([x, inputs], name=prefix + 'add')
+    x = tf.keras.layers.add([x, inputs], name=f'{prefix}add')
 
   return x
 
@@ -384,7 +391,7 @@ def efficientnet(image_input: tf.keras.layers.Input, config: ModelConfig):  # py
     # The first block needs to take care of stride and filter size increase
     drop_rate = drop_connect_rate * float(block_num) / num_blocks_total
     config = config.replace(drop_connect_rate=drop_rate)
-    block_prefix = 'stack_{}/block_0/'.format(stack_idx)
+    block_prefix = f'stack_{stack_idx}/block_0/'
     x = mb_conv_block(x, block, config, block_prefix)
     block_num += 1
     if block.num_repeat > 1:
@@ -393,7 +400,7 @@ def efficientnet(image_input: tf.keras.layers.Input, config: ModelConfig):  # py
       for block_idx in range(block.num_repeat - 1):
         drop_rate = drop_connect_rate * float(block_num) / num_blocks_total
         config = config.replace(drop_connect_rate=drop_rate)
-        block_prefix = 'stack_{}/block_{}/'.format(stack_idx, block_idx + 1)
+        block_prefix = f'stack_{stack_idx}/block_{block_idx + 1}/'
         x = mb_conv_block(x, block, config, prefix=block_prefix)
         block_num += 1
 
@@ -480,10 +487,10 @@ class EfficientNet(tf.keras.Model):
     overrides = dict(overrides) if overrides else {}
 
     # One can define their own custom models if necessary
-    model_configs.update(overrides.pop('model_config', {}))
+    model_configs |= overrides.pop('model_config', {})
 
     if model_name not in model_configs:
-      raise ValueError('Unknown model name {}'.format(model_name))
+      raise ValueError(f'Unknown model name {model_name}')
 
     config = model_configs[model_name]
 

@@ -115,18 +115,13 @@ class DataProcessor(object):
     """Reads a tab separated value file."""
     with tf.io.gfile.GFile(input_file, "r") as f:
       reader = csv.reader(f, delimiter="\t", quotechar=quotechar)
-      lines = []
-      for line in reader:
-        lines.append(line)
-      return lines
+      return list(reader)
 
   @classmethod
   def _read_jsonl(cls, input_file):
     """Reads a json line file."""
     with tf.io.gfile.GFile(input_file, "r") as f:
-      lines = []
-      for json_str in f:
-        lines.append(json.loads(json_str))
+      lines = [json.loads(json_str) for json_str in f]
     return lines
 
   def featurize_example(self, *kargs, **kwargs):
@@ -189,7 +184,7 @@ class AxProcessor(DataProcessor):
     """Creates examples for the training/dev/test sets."""
     examples = []
     for i, example in enumerate(dataset):
-      guid = "%s-%s" % (set_type, i)
+      guid = f"{set_type}-{i}"
       label = "contradiction"
       text_a = self.process_text_fn(example["hypothesis"])
       text_b = self.process_text_fn(example["premise"])
@@ -220,7 +215,7 @@ class ColaProcessor(DefaultGLUEDataProcessor):
         "glue/cola", split=set_type, try_gcs=True).as_numpy_iterator()
     examples = []
     for i, example in enumerate(dataset):
-      guid = "%s-%s" % (set_type, i)
+      guid = f"{set_type}-{i}"
       label = "0"
       text_a = self.process_text_fn(example["sentence"])
       if set_type != "test":
@@ -278,7 +273,7 @@ class MnliProcessor(DataProcessor):
     super(MnliProcessor, self).__init__(process_text_fn)
     self.dataset = tfds.load("glue/mnli", try_gcs=True)
     if mnli_type not in ("matched", "mismatched"):
-      raise ValueError("Invalid `mnli_type`: %s" % mnli_type)
+      raise ValueError(f"Invalid `mnli_type`: {mnli_type}")
     self.mnli_type = mnli_type
 
   def get_train_examples(self, data_dir):
@@ -314,7 +309,7 @@ class MnliProcessor(DataProcessor):
         "glue/mnli", split=set_type, try_gcs=True).as_numpy_iterator()
     examples = []
     for i, example in enumerate(dataset):
-      guid = "%s-%s" % (set_type, i)
+      guid = f"{set_type}-{i}"
       label = "contradiction"
       text_a = self.process_text_fn(example["hypothesis"])
       text_b = self.process_text_fn(example["premise"])
@@ -345,7 +340,7 @@ class MrpcProcessor(DefaultGLUEDataProcessor):
         "glue/mrpc", split=set_type, try_gcs=True).as_numpy_iterator()
     examples = []
     for i, example in enumerate(dataset):
-      guid = "%s-%s" % (set_type, i)
+      guid = f"{set_type}-{i}"
       label = "0"
       text_a = self.process_text_fn(example["sentence1"])
       text_b = self.process_text_fn(example["sentence2"])
@@ -369,8 +364,7 @@ class PawsxProcessor(DataProcessor):
     if language == "all":
       self.languages = PawsxProcessor.supported_languages
     elif language not in PawsxProcessor.supported_languages:
-      raise ValueError("language %s is not supported for PAWS-X task." %
-                       language)
+      raise ValueError(f"language {language} is not supported for PAWS-X task.")
     else:
       self.languages = [language]
 
@@ -378,10 +372,7 @@ class PawsxProcessor(DataProcessor):
     """See base class."""
     lines = []
     for language in self.languages:
-      if language == "en":
-        train_tsv = "train.tsv"
-      else:
-        train_tsv = "translated_train.tsv"
+      train_tsv = "train.tsv" if language == "en" else "translated_train.tsv"
       # Skips the header.
       lines.extend(
           self._read_tsv(os.path.join(data_dir, language, train_tsv))[1:])
@@ -455,7 +446,7 @@ class QnliProcessor(DefaultGLUEDataProcessor):
         "glue/qnli", split=set_type, try_gcs=True).as_numpy_iterator()
     examples = []
     for i, example in enumerate(dataset):
-      guid = "%s-%s" % (set_type, i)
+      guid = f"{set_type}-{i}"
       label = "entailment"
       text_a = self.process_text_fn(example["question"])
       text_b = self.process_text_fn(example["sentence"])
@@ -486,7 +477,7 @@ class QqpProcessor(DefaultGLUEDataProcessor):
         "glue/qqp", split=set_type, try_gcs=True).as_numpy_iterator()
     examples = []
     for i, example in enumerate(dataset):
-      guid = "%s-%s" % (set_type, i)
+      guid = f"{set_type}-{i}"
       label = "0"
       text_a = self.process_text_fn(example["question1"])
       text_b = self.process_text_fn(example["question2"])
@@ -519,7 +510,7 @@ class RteProcessor(DefaultGLUEDataProcessor):
         "glue/rte", split=set_type, try_gcs=True).as_numpy_iterator()
     examples = []
     for i, example in enumerate(dataset):
-      guid = "%s-%s" % (set_type, i)
+      guid = f"{set_type}-{i}"
       label = "entailment"
       text_a = self.process_text_fn(example["sentence1"])
       text_b = self.process_text_fn(example["sentence2"])
@@ -550,7 +541,7 @@ class SstProcessor(DefaultGLUEDataProcessor):
         "glue/sst2", split=set_type, try_gcs=True).as_numpy_iterator()
     examples = []
     for i, example in enumerate(dataset):
-      guid = "%s-%s" % (set_type, i)
+      guid = f"{set_type}-{i}"
       label = "0"
       text_a = self.process_text_fn(example["sentence"])
       if set_type != "test":
@@ -576,7 +567,7 @@ class StsBProcessor(DefaultGLUEDataProcessor):
         "glue/stsb", split=set_type, try_gcs=True).as_numpy_iterator()
     examples = []
     for i, example in enumerate(dataset):
-      guid = "%s-%s" % (set_type, i)
+      guid = f"{set_type}-{i}"
       label = 0.0
       text_a = self.process_text_fn(example["sentence1"])
       text_b = self.process_text_fn(example["sentence2"])
@@ -691,17 +682,17 @@ class TfdsProcessor(DataProcessor):
     return self._labels
 
   def get_processor_name(self):
-    return "TFDS_" + self.dataset_name
+    return f"TFDS_{self.dataset_name}"
 
   def _create_examples(self, split_name, set_type):
     """Creates examples for the training/dev/test sets."""
     if split_name not in self.dataset:
-      raise ValueError("Split {} not available.".format(split_name))
+      raise ValueError(f"Split {split_name} not available.")
     dataset = self.dataset[split_name].as_numpy_iterator()
     examples = []
     text_b, weight = None, None
     for i, example in enumerate(dataset):
-      guid = "%s-%s" % (set_type, i)
+      guid = f"{set_type}-{i}"
       if set_type == "test":
         text_a = self.process_text_fn(example[self.test_text_key])
         if self.test_text_b_key:
@@ -744,7 +735,7 @@ class WnliProcessor(DefaultGLUEDataProcessor):
         "glue/wnli", split=set_type, try_gcs=True).as_numpy_iterator()
     examples = []
     for i, example in enumerate(dataset):
-      guid = "%s-%s" % (set_type, i)
+      guid = f"{set_type}-{i}"
       label = "0"
       text_a = self.process_text_fn(example["sentence1"])
       text_b = self.process_text_fn(example["sentence2"])
@@ -771,7 +762,7 @@ class XnliProcessor(DataProcessor):
     if language == "all":
       self.languages = XnliProcessor.supported_languages
     elif language not in XnliProcessor.supported_languages:
-      raise ValueError("language %s is not supported for XNLI task." % language)
+      raise ValueError(f"language {language} is not supported for XNLI task.")
     else:
       self.languages = [language]
 
@@ -783,7 +774,7 @@ class XnliProcessor(DataProcessor):
       lines.extend(
           self._read_tsv(
               os.path.join(data_dir, "multinli",
-                           "multinli.train.%s.tsv" % language))[1:])
+                           f"multinli.train.{language}.tsv"))[1:])
 
     examples = []
     for i, line in enumerate(lines):
@@ -1085,47 +1076,21 @@ def convert_single_example(ex_index, example, label_list, max_seq_length,
       label_map[label] = i
 
   tokens_a = tokenizer.tokenize(example.text_a)
-  tokens_b = None
-  if example.text_b:
-    tokens_b = tokenizer.tokenize(example.text_b)
-
+  tokens_b = tokenizer.tokenize(example.text_b) if example.text_b else None
   if tokens_b:
     # Modifies `tokens_a` and `tokens_b` in place so that the total
     # length is less than the specified length.
     # Account for [CLS], [SEP], [SEP] with "- 3"
     _truncate_seq_pair(tokens_a, tokens_b, max_seq_length - 3)
-  else:
-    # Account for [CLS] and [SEP] with "- 2"
-    if len(tokens_a) > max_seq_length - 2:
-      tokens_a = tokens_a[0:(max_seq_length - 2)]
+  elif len(tokens_a) > max_seq_length - 2:
+    tokens_a = tokens_a[:max_seq_length - 2]
 
   seg_id_a = 0
-  seg_id_b = 1
   seg_id_cls = 0
   seg_id_pad = 0
 
-  # The convention in BERT is:
-  # (a) For sequence pairs:
-  #  tokens:   [CLS] is this jack ##son ##ville ? [SEP] no it is not . [SEP]
-  #  type_ids: 0     0  0    0    0     0       0 0     1  1  1  1   1 1
-  # (b) For single sequences:
-  #  tokens:   [CLS] the dog is hairy . [SEP]
-  #  type_ids: 0     0   0   0  0     0 0
-  #
-  # Where "type_ids" are used to indicate whether this is the first
-  # sequence or the second sequence. The embedding vectors for `type=0` and
-  # `type=1` were learned during pre-training and are added to the wordpiece
-  # embedding vector (and position vector). This is not *strictly* necessary
-  # since the [SEP] token unambiguously separates the sequences, but it makes
-  # it easier for the model to learn the concept of sequences.
-  #
-  # For classification tasks, the first vector (corresponding to [CLS]) is
-  # used as the "sentence vector". Note that this only makes sense because
-  # the entire model is fine-tuned.
-  tokens = []
-  segment_ids = []
-  tokens.append("[CLS]")
-  segment_ids.append(seg_id_cls)
+  tokens = ["[CLS]"]
+  segment_ids = [seg_id_cls]
   for token in tokens_a:
     tokens.append(token)
     segment_ids.append(seg_id_a)
@@ -1133,6 +1098,7 @@ def convert_single_example(ex_index, example, label_list, max_seq_length,
   segment_ids.append(seg_id_a)
 
   if tokens_b:
+    seg_id_b = 1
     for token in tokens_b:
       tokens.append(token)
       segment_ids.append(seg_id_b)
@@ -1168,16 +1134,15 @@ def convert_single_example(ex_index, example, label_list, max_seq_length,
     logging.info("weight: %s", example.weight)
     logging.info("example_id: %s", example.example_id)
 
-  feature = InputFeatures(
+  return InputFeatures(
       input_ids=input_ids,
       input_mask=input_mask,
       segment_ids=segment_ids,
       label_id=label_id,
       is_real_example=True,
       weight=example.weight,
-      example_id=example.example_id)
-
-  return feature
+      example_id=example.example_id,
+  )
 
 
 class AXgProcessor(DataProcessor):
@@ -1201,7 +1166,7 @@ class AXgProcessor(DataProcessor):
     """Creates examples for the training/dev/test sets."""
     examples = []
     for line in lines:
-      guid = "%s-%s" % (set_type, self.process_text_fn(str(line["idx"])))
+      guid = f'{set_type}-{self.process_text_fn(str(line["idx"]))}'
       text_a = self.process_text_fn(line["premise"])
       text_b = self.process_text_fn(line["hypothesis"])
       label = self.process_text_fn(line["label"])
@@ -1228,7 +1193,7 @@ class BoolQProcessor(DefaultGLUEDataProcessor):
         "super_glue/boolq", split=set_type, try_gcs=True).as_numpy_iterator()
     examples = []
     for example in dataset:
-      guid = "%s-%s" % (set_type, self.process_text_fn(str(example["idx"])))
+      guid = f'{set_type}-{self.process_text_fn(str(example["idx"]))}'
       text_a = self.process_text_fn(example["question"])
       text_b = self.process_text_fn(example["passage"])
       label = "False"
@@ -1257,7 +1222,7 @@ class CBProcessor(DefaultGLUEDataProcessor):
         "super_glue/cb", split=set_type, try_gcs=True).as_numpy_iterator()
     examples = []
     for example in dataset:
-      guid = "%s-%s" % (set_type, self.process_text_fn(str(example["idx"])))
+      guid = f'{set_type}-{self.process_text_fn(str(example["idx"]))}'
       text_a = self.process_text_fn(example["premise"])
       text_b = self.process_text_fn(example["hypothesis"])
       label = "entailment"
@@ -1288,7 +1253,7 @@ class SuperGLUERTEProcessor(DefaultGLUEDataProcessor):
     dataset = tfds.load(
         "super_glue/rte", split=set_type, try_gcs=True).as_numpy_iterator()
     for example in dataset:
-      guid = "%s-%s" % (set_type, self.process_text_fn(str(example["idx"])))
+      guid = f'{set_type}-{self.process_text_fn(str(example["idx"]))}'
       text_a = self.process_text_fn(example["premise"])
       text_b = self.process_text_fn(example["hypothesis"])
       label = "entailment"
@@ -1334,7 +1299,7 @@ class WiCProcessor(DefaultGLUEDataProcessor):
     dataset = tfds.load(
         "super_glue/wic", split=set_type, try_gcs=True).as_numpy_iterator()
     for example in dataset:
-      guid = "%s-%s" % (set_type, self.process_text_fn(str(example["idx"])))
+      guid = f'{set_type}-{self.process_text_fn(str(example["idx"]))}'
       text_a = self.process_text_fn(example["sentence1"])
       text_b = self.process_text_fn(example["sentence2"])
       word = self.process_text_fn(example["word"])
@@ -1367,10 +1332,8 @@ class WiCProcessor(DefaultGLUEDataProcessor):
     seg_id_cls = 0
     seg_id_pad = 0
 
-    tokens = []
-    segment_ids = []
-    tokens.append("[CLS]")
-    segment_ids.append(seg_id_cls)
+    tokens = ["[CLS]"]
+    segment_ids = [seg_id_cls]
     for token in tokens_a:
       tokens.append(token)
       segment_ids.append(seg_id_a)
@@ -1420,16 +1383,15 @@ class WiCProcessor(DefaultGLUEDataProcessor):
       logging.info("weight: %s", example.weight)
       logging.info("example_id: %s", example.example_id)
 
-    feature = InputFeatures(
+    return InputFeatures(
         input_ids=input_ids,
         input_mask=input_mask,
         segment_ids=segment_ids,
         label_id=label_id,
         is_real_example=True,
         weight=example.weight,
-        example_id=example.example_id)
-
-    return feature
+        example_id=example.example_id,
+    )
 
 
 def file_based_convert_examples_to_features(examples,
@@ -1568,7 +1530,7 @@ def generate_tf_record_from_data_file(processor,
             examples, label_list, max_seq_length, tokenizer,
             test_data_output_path.format(language), label_type,
             processor.featurize_example)
-        meta_data["test_{}_data_size".format(language)] = len(examples)
+        meta_data[f"test_{language}_data_size"] = len(examples)
     else:
       file_based_convert_examples_to_features(test_input_data_examples,
                                               label_list, max_seq_length,

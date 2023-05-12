@@ -164,10 +164,9 @@ def get_transformer_encoder(bert_config,
           stddev=bert_config.initializer_range))
   if isinstance(bert_config, albert_configs.AlbertConfig):
     return networks.AlbertEncoder(**kwargs)
-  else:
-    assert isinstance(bert_config, configs.BertConfig)
-    kwargs['output_range'] = output_range
-    return networks.BertEncoder(**kwargs)
+  assert isinstance(bert_config, configs.BertConfig)
+  kwargs['output_range'] = output_range
+  return networks.BertEncoder(**kwargs)
 
 
 def pretrain_model(bert_config,

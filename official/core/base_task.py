@@ -158,8 +158,7 @@ class Task(tf.Module, metaclass=abc.ABCMeta):
       losses = [tf.constant(0.0, dtype=tf.float32)]
     else:
       losses = aux_losses
-    total_loss = tf.add_n(losses)
-    return total_loss
+    return tf.add_n(losses)
 
   def build_metrics(self, training: bool = True):
     """Gets streaming metrics for training/validation."""
@@ -250,8 +249,8 @@ class Task(tf.Module, metaclass=abc.ABCMeta):
       self.process_metrics(metrics, labels, outputs)
     if model.compiled_metrics:
       self.process_compiled_metrics(model.compiled_metrics, labels, outputs)
-      logs.update({m.name: m.result() for m in metrics or []})
-      logs.update({m.name: m.result() for m in model.metrics})
+      logs |= {m.name: m.result() for m in metrics or []}
+      logs |= {m.name: m.result() for m in model.metrics}
     return logs
 
   def validation_step(self, inputs, model: tf.keras.Model, metrics=None):
@@ -279,8 +278,8 @@ class Task(tf.Module, metaclass=abc.ABCMeta):
       self.process_metrics(metrics, labels, outputs)
     if model.compiled_metrics:
       self.process_compiled_metrics(model.compiled_metrics, labels, outputs)
-      logs.update({m.name: m.result() for m in metrics or []})
-      logs.update({m.name: m.result() for m in model.metrics})
+      logs |= {m.name: m.result() for m in metrics or []}
+      logs |= {m.name: m.result() for m in model.metrics}
     return logs
 
   def inference_step(self, inputs, model: tf.keras.Model):

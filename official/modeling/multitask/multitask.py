@@ -51,14 +51,12 @@ class MultiTask(tf.Module, metaclass=abc.ABCMeta):
       self._tasks = {}
       for task in tasks:
         if task.name in self._tasks:
-          raise ValueError("Duplicated tasks found, task.name is %s" %
-                           task.name)
+          raise ValueError(f"Duplicated tasks found, task.name is {task.name}")
         self._tasks[task.name] = task
     elif isinstance(tasks, dict):
       self._tasks = tasks
     else:
-      raise ValueError("The tasks argument has an invalid type: %s" %
-                       type(tasks))
+      raise ValueError(f"The tasks argument has an invalid type: {type(tasks)}")
     self.task_eval_steps = task_eval_steps or {}
     self._task_weights = task_weights or {}
     self._task_weights = dict([

@@ -31,10 +31,7 @@ class MockFooModel(tf.keras.Model):
 
   def call(self, inputs):
     self.add_loss(tf.zeros((1,), dtype=tf.float32))
-    if "foo" in inputs:
-      input_tensor = inputs["foo"]
-    else:
-      input_tensor = inputs["bar"]
+    input_tensor = inputs["foo"] if "foo" in inputs else inputs["bar"]
     return self._foo_specific_layer(self._share_layer(input_tensor))
 
 

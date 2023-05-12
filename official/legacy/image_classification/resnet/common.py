@@ -134,12 +134,11 @@ def get_callbacks(pruning_method=None,
           tfmot.sparsity.keras.PruningSummaries(
               log_dir=model_dir, profile_batch=0))
 
-  if enable_checkpoint_and_export:
-    if model_dir is not None:
-      ckpt_full_path = os.path.join(model_dir, 'model.ckpt-{epoch:04d}')
-      callbacks.append(
-          tf.keras.callbacks.ModelCheckpoint(
-              ckpt_full_path, save_weights_only=True))
+  if enable_checkpoint_and_export and model_dir is not None:
+    ckpt_full_path = os.path.join(model_dir, 'model.ckpt-{epoch:04d}')
+    callbacks.append(
+        tf.keras.callbacks.ModelCheckpoint(
+            ckpt_full_path, save_weights_only=True))
   return callbacks
 
 

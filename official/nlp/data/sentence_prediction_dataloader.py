@@ -60,7 +60,7 @@ class SentencePredictionDataLoader(data_loader.DataLoader):
     if params.label_name:
       self._label_name_mapping = dict([params.label_name])
     else:
-      self._label_name_mapping = dict()
+      self._label_name_mapping = {}
 
   def name_to_features_spec(self):
     """Defines features to decode. Subclass may override to append features."""
@@ -177,7 +177,7 @@ class TextProcessor(tf.Module):
           lower_case=lower_case,
           strip_diacritics=True)  # Strip diacritics to follow ALBERT model
     else:
-      raise ValueError('Unsupported tokenization: %s' % tokenization)
+      raise ValueError(f'Unsupported tokenization: {tokenization}')
 
     self._pack_inputs = modeling.layers.BertPackInputs(
         seq_length=seq_length,
@@ -234,10 +234,10 @@ class SentencePredictionTextDataLoader(data_loader.DataLoader):
     return model_inputs
 
   def name_to_features_spec(self):
-    name_to_features = {}
-    for text_field in self._text_fields:
-      name_to_features[text_field] = tf.io.FixedLenFeature([], tf.string)
-
+    name_to_features = {
+        text_field: tf.io.FixedLenFeature([], tf.string)
+        for text_field in self._text_fields
+    }
     label_type = LABEL_TYPES_MAP[self._label_type]
     name_to_features[self._label_field] = tf.io.FixedLenFeature([], label_type)
     if self._include_example_id:

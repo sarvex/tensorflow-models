@@ -141,25 +141,25 @@ class LinearWarmup(tf.keras.optimizers.schedules.LearningRateSchedule):
     else:
       after_warmup_lr = tf.cast(self._after_warmup_lr_sched, dtype=tf.float32)
 
-    lr = tf.cond(global_step < self._warmup_steps,
-                 lambda: linear_warmup_lr,
-                 lambda: after_warmup_lr)
-    return lr
+    return tf.cond(
+        global_step < self._warmup_steps,
+        lambda: linear_warmup_lr,
+        lambda: after_warmup_lr,
+    )
 
   def get_config(self) -> Mapping[str, Any]:
-    if isinstance(self._after_warmup_lr_sched,
-                  tf.keras.optimizers.schedules.LearningRateSchedule):
-      config = {
-          "after_warmup_lr_sched": self._after_warmup_lr_sched.get_config()}  # pytype: disable=attribute-error
-    else:
-      config = {"after_warmup_lr_sched": self._after_warmup_lr_sched}  # pytype: disable=attribute-error
-
-    config.update({
+    return ({
+        "after_warmup_lr_sched": self._after_warmup_lr_sched.get_config()
+    } if isinstance(
+        self._after_warmup_lr_sched,
+        tf.keras.optimizers.schedules.LearningRateSchedule,
+    ) else {
+        "after_warmup_lr_sched": self._after_warmup_lr_sched
+    }) | {
         "warmup_steps": self._warmup_steps,
         "warmup_learning_rate": self._init_warmup_lr,
-        "name": self._name
-    })
-    return config
+        "name": self._name,
+    }
 
 
 class PolynomialWarmUp(tf.keras.optimizers.schedules.LearningRateSchedule):
@@ -215,19 +215,18 @@ class PolynomialWarmUp(tf.keras.optimizers.schedules.LearningRateSchedule):
           name=name)
 
   def get_config(self) -> Mapping[str, Any]:
-    if isinstance(self._after_warmup_lr_sched,
-                  tf.keras.optimizers.schedules.LearningRateSchedule):
-      config = {
-          "after_warmup_lr_sched": self._after_warmup_lr_sched.get_config()}  # pytype: disable=attribute-error
-    else:
-      config = {"after_warmup_lr_sched": self._after_warmup_lr_sched}  # pytype: disable=attribute-error
-
-    config.update({
+    return ({
+        "after_warmup_lr_sched": self._after_warmup_lr_sched.get_config()
+    } if isinstance(
+        self._after_warmup_lr_sched,
+        tf.keras.optimizers.schedules.LearningRateSchedule,
+    ) else {
+        "after_warmup_lr_sched": self._after_warmup_lr_sched
+    }) | {
         "warmup_steps": self._warmup_steps,
         "power": self._power,
-        "name": self._name
-    })
-    return config
+        "name": self._name,
+    }
 
 
 class DirectPowerDecay(tf.keras.optimizers.schedules.LearningRateSchedule):
@@ -461,7 +460,7 @@ class StepConsineDecayWithOffset(
           (init_total_steps)) + 1.0) / 2.0 + next_init_lr)
       learning_rate = cosine_learning_rate
       tf.compat.v1.logging.info("DEBUG lr %r next lr %r", learning_rate,
-                                cosine_learning_rate)
+                                learning_rate)
       tf.compat.v1.logging.info("DEBUG lr %r next lr %r inittotalstep %r",
                                 init_lr, next_init_lr, init_total_steps)
 

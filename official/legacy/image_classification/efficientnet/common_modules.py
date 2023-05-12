@@ -55,21 +55,17 @@ class TpuBatchNormalization(tf.keras.layers.BatchNormalization):
         inputs, reduction_axes, keep_dims=keep_dims)
 
     num_shards = tpu_function.get_tpu_context().number_of_shards or 1
-    if num_shards <= 8:  # Skip cross_replica for 2x2 or smaller slices.
-      num_shards_per_group = 1
-    else:
-      num_shards_per_group = max(8, num_shards // 8)
-    if num_shards_per_group > 1:
-      # Compute variance using: Var[X]= E[X^2] - E[X]^2.
-      shard_square_of_mean = tf.math.square(shard_mean)
-      shard_mean_of_square = shard_variance + shard_square_of_mean
-      group_mean = self._cross_replica_average(shard_mean, num_shards_per_group)
-      group_mean_of_square = self._cross_replica_average(
-          shard_mean_of_square, num_shards_per_group)
-      group_variance = group_mean_of_square - tf.math.square(group_mean)
-      return (group_mean, group_variance)
-    else:
+    num_shards_per_group = 1 if num_shards <= 8 else max(8, num_shards // 8)
+    if num_shards_per_group <= 1:
       return (shard_mean, shard_variance)
+    # Compute variance using: Var[X]= E[X^2] - E[X]^2.
+    shard_square_of_mean = tf.math.square(shard_mean)
+    shard_mean_of_square = shard_variance + shard_square_of_mean
+    group_mean = self._cross_replica_average(shard_mean, num_shards_per_group)
+    group_mean_of_square = self._cross_replica_average(
+        shard_mean_of_square, num_shards_per_group)
+    group_variance = group_mean_of_square - tf.math.square(group_mean)
+    return (group_mean, group_variance)
 
 
 def get_batch_norm(batch_norm_type: Text) -> tf.keras.layers.BatchNormalization:

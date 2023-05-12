@@ -69,9 +69,8 @@ def eval_squad(strategy, input_meta_data):
   bert_config = bert_configs.BertConfig.from_json_file(FLAGS.bert_config_file)
   tokenizer = tokenization.FullTokenizer(
       vocab_file=FLAGS.vocab_file, do_lower_case=FLAGS.do_lower_case)
-  eval_metrics = run_squad_helper.eval_squad(
-      strategy, input_meta_data, tokenizer, bert_config, squad_lib_wp)
-  return eval_metrics
+  return run_squad_helper.eval_squad(strategy, input_meta_data, tokenizer,
+                                     bert_config, squad_lib_wp)
 
 
 def export_squad(model_export_path, input_meta_data):

@@ -271,7 +271,7 @@ def generate_classifier_dataset():
     }
     task_name = FLAGS.classification_task_name.lower()
     if task_name not in processors:
-      raise ValueError("Task not found: %s" % (task_name))
+      raise ValueError(f"Task not found: {task_name}")
 
     processor = processors[task_name](process_text_fn=processor_text_fn)
     return classifier_data_lib.generate_tf_record_from_data_file(
@@ -326,19 +326,18 @@ def generate_squad_dataset():
         doc_stride=FLAGS.doc_stride,
         version_2_with_negative=FLAGS.version_2_with_negative,
         xlnet_format=FLAGS.xlnet_format)
-  else:
-    assert FLAGS.tokenization == "SentencePiece"
-    return squad_lib_sp.generate_tf_record_from_json_file(
-        input_file_path=FLAGS.squad_data_file,
-        sp_model_file=FLAGS.sp_model_file,
-        output_path=FLAGS.train_data_output_path,
-        translated_input_folder=FLAGS.translated_squad_data_folder,
-        max_seq_length=FLAGS.max_seq_length,
-        do_lower_case=FLAGS.do_lower_case,
-        max_query_length=FLAGS.max_query_length,
-        doc_stride=FLAGS.doc_stride,
-        xlnet_format=FLAGS.xlnet_format,
-        version_2_with_negative=FLAGS.version_2_with_negative)
+  assert FLAGS.tokenization == "SentencePiece"
+  return squad_lib_sp.generate_tf_record_from_json_file(
+      input_file_path=FLAGS.squad_data_file,
+      sp_model_file=FLAGS.sp_model_file,
+      output_path=FLAGS.train_data_output_path,
+      translated_input_folder=FLAGS.translated_squad_data_folder,
+      max_seq_length=FLAGS.max_seq_length,
+      do_lower_case=FLAGS.do_lower_case,
+      max_query_length=FLAGS.max_query_length,
+      doc_stride=FLAGS.doc_stride,
+      xlnet_format=FLAGS.xlnet_format,
+      version_2_with_negative=FLAGS.version_2_with_negative)
 
 
 def generate_retrieval_dataset():
@@ -361,7 +360,7 @@ def generate_retrieval_dataset():
 
   task_name = FLAGS.retrieval_task_name.lower()
   if task_name not in processors:
-    raise ValueError("Task not found: %s" % task_name)
+    raise ValueError(f"Task not found: {task_name}")
 
   processor = processors[task_name](process_text_fn=processor_text_fn)
 
@@ -386,7 +385,7 @@ def generate_tagging_dataset():
   }
   task_name = FLAGS.tagging_task_name.lower()
   if task_name not in processors:
-    raise ValueError("Task not found: %s" % task_name)
+    raise ValueError(f"Task not found: {task_name}")
 
   if FLAGS.tokenization == "WordPiece":
     tokenizer = tokenization.FullTokenizer(
@@ -397,7 +396,7 @@ def generate_tagging_dataset():
     processor_text_fn = functools.partial(
         tokenization.preprocess_text, lower=FLAGS.do_lower_case)
   else:
-    raise ValueError("Unsupported tokenization: %s" % FLAGS.tokenization)
+    raise ValueError(f"Unsupported tokenization: {FLAGS.tokenization}")
 
   processor = processors[task_name]()
   return tagging_data_lib.generate_tf_record_from_data_file(

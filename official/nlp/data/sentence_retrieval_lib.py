@@ -48,7 +48,7 @@ class BuccProcessor(classifier_data_lib.DataProcessor):
     """Creates examples for the training and dev sets."""
     examples = []
     for (i, line) in enumerate(lines):
-      guid = "%s-%s" % (set_type, i)
+      guid = f"{set_type}-{i}"
       example_id = int(line[0].split("-")[1])
       text_a = self.process_text_fn(line[1])
       examples.append(
@@ -82,7 +82,7 @@ class TatoebaProcessor(classifier_data_lib.DataProcessor):
     """Creates examples for the training and dev sets."""
     examples = []
     for (i, line) in enumerate(lines):
-      guid = "%s-%s" % (set_type, i)
+      guid = f"{set_type}-{i}"
       text_a = self.process_text_fn(line[0])
       examples.append(
           classifier_data_lib.InputExample(
@@ -140,9 +140,8 @@ def generate_sentence_retrevial_tf_record(processor,
         num_eval_data = len(eval_input_data_examples)
         logging.info("Processing %d dev examples of %s-en.%s", num_eval_data,
                      lang_a, lang_b)
-        output_file = os.path.join(
-            eval_data_output_path,
-            "{}-en-{}.{}.tfrecords".format(lang_a, lang_b, "dev"))
+        output_file = os.path.join(eval_data_output_path,
+                                   f"{lang_a}-en-{lang_b}.dev.tfrecords")
         classifier_data_lib.file_based_convert_examples_to_features(
             eval_input_data_examples, None, max_seq_length, tokenizer,
             output_file, None)
@@ -155,9 +154,8 @@ def generate_sentence_retrevial_tf_record(processor,
         num_test_data = len(test_input_data_examples)
         logging.info("Processing %d test examples of %s-en.%s", num_test_data,
                      lang_a, lang_b)
-        output_file = os.path.join(
-            test_data_output_path,
-            "{}-en-{}.{}.tfrecords".format(lang_a, lang_b, "test"))
+        output_file = os.path.join(test_data_output_path,
+                                   f"{lang_a}-en-{lang_b}.test.tfrecords")
         classifier_data_lib.file_based_convert_examples_to_features(
             test_input_data_examples, None, max_seq_length, tokenizer,
             output_file, None)

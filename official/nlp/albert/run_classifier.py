@@ -95,7 +95,7 @@ def main(_):
   elif FLAGS.mode == 'predict':
     predict(strategy, albert_config, input_meta_data, eval_input_fn)
   else:
-    raise ValueError('Unsupported mode is specified: %s' % FLAGS.mode)
+    raise ValueError(f'Unsupported mode is specified: {FLAGS.mode}')
   return
 
 if __name__ == '__main__':

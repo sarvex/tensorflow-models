@@ -25,7 +25,7 @@ from official.nlp.data import wmt_dataloader
 def _generate_line_file(filepath, lines):
   with tf.io.gfile.GFile(filepath, 'w') as f:
     for l in lines:
-      f.write('{}\n'.format(l))
+      f.write(f'{l}\n')
 
 
 def _generate_record_file(filepath, src_lines, tgt_lines, unique_id=False):
@@ -84,8 +84,7 @@ class WMTDataLoaderTest(tf.test.TestCase, parameterized.TestCase):
     sentencepeice_model_prefix = os.path.join(self._temp_dir, 'sp')
     _train_sentencepiece(self._sentencepeice_input_path, 20,
                          sentencepeice_model_prefix)
-    self._sentencepeice_model_path = '{}.model'.format(
-        sentencepeice_model_prefix)
+    self._sentencepeice_model_path = f'{sentencepeice_model_prefix}.model'
 
   @parameterized.named_parameters(
       ('train_static', True, True, 100, (2, 35)),

@@ -47,7 +47,7 @@ def _create_fake_preprocessed_dataset(output_path, seq_length, label_type):
     elif label_type == 'float':
       features['label_ids'] = create_float_feature([0.5])
     else:
-      raise ValueError('Unsupported label_type: %s' % label_type)
+      raise ValueError(f'Unsupported label_type: {label_type}')
 
     tf_example = tf.train.Example(features=tf.train.Features(feature=features))
     writer.write(tf_example.SerializeToString())
@@ -80,7 +80,7 @@ def _create_fake_raw_dataset(output_path, text_fields, label_type):
     elif label_type == 'float':
       features['label'] = create_float_feature([0.5])
     else:
-      raise ValueError('Unexpected label_type: %s' % label_type)
+      raise ValueError(f'Unexpected label_type: {label_type}')
     tf_example = tf.train.Example(features=tf.train.Features(feature=features))
     writer.write(tf_example.SerializeToString())
   writer.close()
@@ -104,15 +104,13 @@ def _create_fake_sentencepiece_model(output_dir):
       vocab_size=full_vocab_size,
       bos_id=full_vocab_size - 2,
       eos_id=full_vocab_size - 1)
-  SentencePieceTrainer.Train(' '.join(
-      ['--{}={}'.format(k, v) for k, v in flags.items()]))
-  return model_prefix + '.model'
+  SentencePieceTrainer.Train(' '.join([f'--{k}={v}' for k, v in flags.items()]))
+  return f'{model_prefix}.model'
 
 
 def _create_fake_vocab_file(vocab_file_path):
   tokens = ['[PAD]']
-  for i in range(1, 100):
-    tokens.append('[unused%d]' % i)
+  tokens.extend('[unused%d]' % i for i in range(1, 100))
   tokens.extend(['[UNK]', '[CLS]', '[SEP]', '[MASK]', 'hello', 'world'])
   with tf.io.gfile.GFile(vocab_file_path, 'w') as outfile:
     outfile.write('\n'.join(tokens))

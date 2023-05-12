@@ -153,8 +153,7 @@ class AdamWeightDecay(tf.keras.optimizers.Adam):
         self.weight_decay_rate, name='adam_weight_decay_rate')
 
   def _decay_weights_op(self, var, learning_rate, apply_state):
-    do_decay = self._do_use_weight_decay(var.name)
-    if do_decay:
+    if do_decay := self._do_use_weight_decay(var.name):
       return var.assign_sub(
           learning_rate * var *
           apply_state[(var.device, var.dtype.base_dtype)]['weight_decay_rate'],

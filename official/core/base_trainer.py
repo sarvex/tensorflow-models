@@ -54,10 +54,8 @@ class Recovery:
   def should_recover(self, loss_value, global_step):
     if tf.math.is_nan(loss_value):
       return True
-    if (global_step >= self.recovery_begin_steps and
-        loss_value > self.loss_upper_bound):
-      return True
-    return False
+    return (global_step >= self.recovery_begin_steps
+            and loss_value > self.loss_upper_bound)
 
   def maybe_recover(self, loss_value, global_step):
     """Conditionally recovers the training by triggering checkpoint restoration.
@@ -147,16 +145,15 @@ class _AsyncTrainer(orbit.StandardTrainer, orbit.StandardEvaluator):
     Returns:
       A distributed Dataset.
     """
-    if getattr(self, "_is_async", False):
-      per_worker_dataset_fn = functools.partial(
-          orbit.utils.make_distributed_dataset, self._strategy, dataset_or_fn,
-          *args, **kwargs)
-      per_worker_dataset_fn = tf.function(per_worker_dataset_fn)
-
-      return self._coordinator.create_per_worker_dataset(per_worker_dataset_fn)
-    else:
+    if not getattr(self, "_is_async", False):
       return orbit.utils.make_distributed_dataset(self._strategy, dataset_or_fn,
                                                   *args, **kwargs)
+    per_worker_dataset_fn = functools.partial(
+        orbit.utils.make_distributed_dataset, self._strategy, dataset_or_fn,
+        *args, **kwargs)
+    per_worker_dataset_fn = tf.function(per_worker_dataset_fn)
+
+    return self._coordinator.create_per_worker_dataset(per_worker_dataset_fn)
 
 
 def get_runtime_options(config: ExperimentConfig):
@@ -326,10 +323,7 @@ class Trainer(_AsyncTrainer):
 
   @property
   def optimizer(self):
-    if hasattr(self, "_optimizer"):
-      return self._optimizer
-    else:
-      return None
+    return self._optimizer if hasattr(self, "_optimizer") else None
 
   @property
   def global_step(self):
@@ -444,9 +438,7 @@ class Trainer(_AsyncTrainer):
   def eval_end(self, aggregated_logs=None):
     """Processes evaluation results."""
     self.join()
-    logs = {}
-    for metric in self.validation_metrics:
-      logs[metric.name] = metric.result()
+    logs = {metric.name: metric.result() for metric in self.validation_metrics}
     if self.validation_loss.count.numpy() != 0:
       logs[self.validation_loss.name] = self.validation_loss.result()
     else:
@@ -456,14 +448,14 @@ class Trainer(_AsyncTrainer):
     if aggregated_logs:
       metrics = self.task.reduce_aggregated_logs(
           aggregated_logs, global_step=self.global_step)
-      logs.update(metrics)
+      logs |= metrics
 
     if self._checkpoint_exporter:
       self._checkpoint_exporter.maybe_export_checkpoint(
           self.checkpoint, logs, self.global_step.numpy())
       metric_name = self.config.trainer.best_checkpoint_eval_metric
-      logs["best_" +
-           metric_name] = self._checkpoint_exporter.best_ckpt_logs[metric_name]
+      logs[f"best_{metric_name}"] = self._checkpoint_exporter.best_ckpt_logs[
+          metric_name]
 
     # Swaps back weights after testing when EMA is used.
     # This happens after best checkpoint export so that average weights used for

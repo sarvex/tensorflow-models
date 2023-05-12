@@ -202,20 +202,17 @@ def preprocess_and_tokenize_input_files(
         if line_count % log_example_freq == 0:
           logging.info("Loading line %d", line_count)
 
-        line = line.strip()
-
-        if not line:
-          if use_eod:
-            token_ids = [eod_symbol]
-            sentence_id = not sentence_id
-          else:
-            continue
-        else:
+        if line := line.strip():
           preprocessed_line = _preprocess_line(
               line=line, do_lower_case=do_lower_case)
           token_ids = tokenization.encode_ids(
               sp_model=tokenizer.sp_model, text=preprocessed_line)
 
+        elif use_eod:
+          token_ids = [eod_symbol]
+          sentence_id = not sentence_id
+        else:
+          continue
         all_tokens.extend(token_ids)
         all_sentence_ids.extend([sentence_id] * len(token_ids))
         sentence_id = not sentence_id
@@ -304,10 +301,7 @@ def _create_a_and_b_segments(
   if not cut_indices or random.random() < no_cut_probability:
     # Segments A and B are contained within the same sentence.
     label = 0
-    if not cut_indices:
-      a_end = end_index
-    else:
-      a_end = random.choice(cut_indices)
+    a_end = end_index if not cut_indices else random.choice(cut_indices)
     b_length = max(1, total_length - (a_end - a_begin))
     b_begin = random.randint(0, data_length - 1 - b_length)
     b_end = b_begin + b_length
@@ -346,10 +340,7 @@ def _is_functional_piece(piece: str) -> bool:
 
 def _is_start_piece(piece: str) -> bool:
   special_pieces = set(list('!"#$%&\"()*+,-./:;?@[\\]^_`{|}~'))
-  if (piece.startswith("▁") or piece in special_pieces):
-    return True
-  else:
-    return False
+  return bool((piece.startswith("▁") or piece in special_pieces))
 
 
 def _get_boundary_indices(
@@ -357,10 +348,11 @@ def _get_boundary_indices(
     tokenizer: tokenization.FullSentencePieceTokenizer) -> np.array:
   """Gets the boundary indices of whole words."""
   seq_length = len(data)
-  boundary_indices = []
-  for index, piece in enumerate(tokenizer.convert_ids_to_tokens(data.tolist())):
-    if _is_start_piece(piece) and not _is_functional_piece(piece):
-      boundary_indices.append(index)
+  boundary_indices = [
+      index for index, piece in enumerate(
+          tokenizer.convert_ids_to_tokens(data.tolist()))
+      if _is_start_piece(piece) and not _is_functional_piece(piece)
+  ]
   boundary_indices.append(seq_length)
   return boundary_indices
 
@@ -550,14 +542,12 @@ def get_tfrecord_name(
   components = []
   if prefix:
     components.append(prefix)
-  components.append("seqlen-{}".format(seq_length))
+  components.append(f"seqlen-{seq_length}")
   if reuse_length == 0:
     components.append("memless")
   else:
-    components.append("reuse-{}".format(reuse_length))
-  components.append("bs-{}".format(per_host_batch_size))
-  components.append("cores-{}".format(num_cores_per_host))
-
+    components.append(f"reuse-{reuse_length}")
+  components.extend((f"bs-{per_host_batch_size}", f"cores-{num_cores_per_host}"))
   if do_lower_case:
     components.append("uncased")
   else:
@@ -582,7 +572,7 @@ def get_tfrecord_name(
 
   current_shard = task_id * num_passes + pass_id
   total_shards = num_tasks * num_passes
-  return s + "-{}-of-{}".format(current_shard, total_shards)
+  return f"{s}-{current_shard}-of-{total_shards}"
 
 
 def create_tfrecords(
@@ -687,7 +677,7 @@ def create_tfrecords(
         "bi_data": bi_data,
         "use_eod_token": use_eod_token,
     }
-    corpus_fname = os.path.basename(filename) + ".json"
+    corpus_fname = f"{os.path.basename(filename)}.json"
     corpus_destination = os.path.join(save_dir, corpus_fname)
     logging.info("Saving corpus info to %s", corpus_destination)
 

@@ -106,7 +106,7 @@ class DenseEinsum(tf.keras.layers.Layer):
       kernel_str += char
       output_str += char
 
-    return input_str + "," + kernel_str + "->" + output_str
+    return f"{input_str},{kernel_str}->{output_str}"
 
   def build(self, input_shape):
     input_shape = tf.TensorShape(input_shape)

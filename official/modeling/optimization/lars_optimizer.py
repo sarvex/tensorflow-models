@@ -107,8 +107,8 @@ class LARS(tf.keras.optimizers.Optimizer):
     if self._use_weight_decay(param_name):
       grad += self.weight_decay_rate * param
 
+    trust_ratio = 1.0
     if self.classic_momentum:
-      trust_ratio = 1.0
       if self._do_layer_adaptation(param_name):
         w_norm = tf.norm(param, ord=2)
         g_norm = tf.norm(grad, ord=2)
@@ -126,12 +126,7 @@ class LARS(tf.keras.optimizers.Optimizer):
       next_param = param - update
     else:
       next_v = tf.multiply(self.momentum, v) + grad
-      if self.nesterov:
-        update = tf.multiply(self.momentum, next_v) + grad
-      else:
-        update = next_v
-
-      trust_ratio = 1.0
+      update = tf.multiply(self.momentum, next_v) + grad if self.nesterov else next_v
       if self._do_layer_adaptation(param_name):
         w_norm = tf.norm(param, ord=2)
         v_norm = tf.norm(update, ord=2)

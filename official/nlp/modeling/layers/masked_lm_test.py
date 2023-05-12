@@ -43,10 +43,8 @@ class MaskedLMTest(keras_parameterized.TestCase):
           num_attention_heads=4,
       )
 
-    # Create a maskedLM from the transformer stack.
-    test_layer = masked_lm.MaskedLM(
+    return masked_lm.MaskedLM(
         embedding_table=xformer_stack.get_embedding_table(), output=output)
-    return test_layer
 
   def test_layer_creation(self):
     vocab_size = 100

@@ -44,7 +44,7 @@ def _build_proj_equation(free_dims, bound_dims, output_dims):
     kernel_str += char
     output_str += char
     bias_axes += char
-  equation = "%s,%s->%s" % (input_str, kernel_str, output_str)
+  equation = f"{input_str},{kernel_str}->{output_str}"
 
   return equation, bias_axes, len(output_str)
 
@@ -121,10 +121,7 @@ class MultiHeadRelativeAttention(tf.keras.layers.MultiHeadAttention):
         query=query,
         value=value,
         key=key)
-    if hasattr(value, "shape"):
-      value_shape = tf.TensorShape(value.shape)
-    else:
-      value_shape = value
+    value_shape = tf.TensorShape(value.shape) if hasattr(value, "shape") else value
     if key is None:
       key_shape = value_shape
     elif hasattr(key, "shape"):

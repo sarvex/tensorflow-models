@@ -37,16 +37,13 @@ def _cache_memory(current_state, previous_state, memory_length, reuse_length=0):
   """
   if memory_length is None or memory_length == 0:
     return None
-  else:
-    if reuse_length > 0:
-      current_state = current_state[:, :reuse_length, :]
+  if reuse_length > 0:
+    current_state = current_state[:, :reuse_length, :]
 
-    if previous_state is None:
-      new_mem = current_state[:, -memory_length:, :]
-    else:
-      new_mem = tf.concat(
-          [previous_state, current_state], 1)[:, -memory_length:, :]
-
+  new_mem = (current_state[:,
+                           -memory_length:, :] if previous_state is None else
+             tf.concat([previous_state, current_state], 1)[:,
+                                                           -memory_length:, :])
   return tf.stop_gradient(new_mem)
 
 
@@ -288,7 +285,7 @@ class TransformerXLBlock(tf.keras.layers.Layer):
         segment_attention_bias=segment_attention_bias,
         state=state)
 
-    attention_kwargs.update(common_attention_kwargs)
+    attention_kwargs |= common_attention_kwargs
     attention_output = self._attention_layer(**attention_kwargs)
 
     if self._two_stream:
@@ -411,22 +408,21 @@ class TransformerXL(tf.keras.layers.Layer):
         initializer=self._initializer)
 
     self.transformer_xl_layers = []
-    for i in range(self._num_layers):
-      self.transformer_xl_layers.append(
-          TransformerXLBlock(
-              vocab_size=self._vocab_size,
-              hidden_size=self._head_size * self._num_attention_heads,
-              num_attention_heads=self._num_attention_heads,
-              head_size=self._head_size,
-              inner_size=self._inner_size,
-              dropout_rate=self._dropout_rate,
-              attention_dropout_rate=self._attention_dropout_rate,
-              norm_epsilon=1e-12,
-              inner_activation=self._inner_activation,
-              two_stream=self._two_stream,
-              kernel_initializer="variance_scaling",
-              name="layer_%d" % i))
-
+    self.transformer_xl_layers.extend(
+        TransformerXLBlock(
+            vocab_size=self._vocab_size,
+            hidden_size=self._head_size * self._num_attention_heads,
+            num_attention_heads=self._num_attention_heads,
+            head_size=self._head_size,
+            inner_size=self._inner_size,
+            dropout_rate=self._dropout_rate,
+            attention_dropout_rate=self._attention_dropout_rate,
+            norm_epsilon=1e-12,
+            inner_activation=self._inner_activation,
+            two_stream=self._two_stream,
+            kernel_initializer="variance_scaling",
+            name="layer_%d" % i,
+        ) for i in range(self._num_layers))
     self.output_dropout = tf.keras.layers.Dropout(rate=self._dropout_rate)
 
   def get_config(self):
@@ -551,9 +547,5 @@ class TransformerXL(tf.keras.layers.Layer):
       else:
         query_stream = None
 
-    if self._two_stream:
-      output_stream = query_stream
-    else:
-      output_stream = content_stream
-
+    output_stream = query_stream if self._two_stream else content_stream
     return output_stream, new_mems

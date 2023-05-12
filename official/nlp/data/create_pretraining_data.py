@@ -112,12 +112,11 @@ def write_instance_to_example_files(instances, tokenizer, max_seq_length,
                                     max_predictions_per_seq, output_files,
                                     gzip_compress, use_v2_feature_names):
   """Creates TF example files from `TrainingInstance`s."""
-  writers = []
-  for output_file in output_files:
-    writers.append(
-        tf.io.TFRecordWriter(
-            output_file, options="GZIP" if gzip_compress else ""))
-
+  writers = [
+      tf.io.TFRecordWriter(output_file,
+                           options="GZIP" if gzip_compress else "")
+      for output_file in output_files
+  ]
   writer_index = 0
 
   total_written = 0
@@ -189,13 +188,11 @@ def write_instance_to_example_files(instances, tokenizer, max_seq_length,
 
 
 def create_int_feature(values):
-  feature = tf.train.Feature(int64_list=tf.train.Int64List(value=list(values)))
-  return feature
+  return tf.train.Feature(int64_list=tf.train.Int64List(value=list(values)))
 
 
 def create_float_feature(values):
-  feature = tf.train.Feature(float_list=tf.train.FloatList(value=list(values)))
-  return feature
+  return tf.train.Feature(float_list=tf.train.FloatList(value=list(values)))
 
 
 def create_training_instances(input_files,
@@ -228,8 +225,7 @@ def create_training_instances(input_files,
         # Empty lines are used as document delimiters
         if not line:
           all_documents.append([])
-        tokens = tokenizer.tokenize(line)
-        if tokens:
+        if tokens := tokenizer.tokenize(line):
           all_documents[-1].append(tokens)
 
   # Remove empty documents
@@ -330,13 +326,11 @@ def create_instances_from_document(
             tokens_b.extend(current_chunk[j])
         truncate_seq_pair(tokens_a, tokens_b, max_num_tokens, rng)
 
-        assert len(tokens_a) >= 1
-        assert len(tokens_b) >= 1
+        assert tokens_a
+        assert tokens_b
 
-        tokens = []
-        segment_ids = []
-        tokens.append("[CLS]")
-        segment_ids.append(0)
+        tokens = ["[CLS]"]
+        segment_ids = [0]
         for token in tokens_a:
           tokens.append(token)
           segment_ids.append(0)
@@ -400,8 +394,7 @@ def _window(iterable, size):
   i = iter(iterable)
   window = []
   try:
-    for e in range(0, size):
-      window.append(next(i))
+    window.extend(next(i) for _ in range(0, size))
     yield window
   except StopIteration:
     # handle the case where iterable's length is less than the window size.
@@ -423,10 +416,7 @@ def _contiguous(sorted_grams):
     _contiguous([(1, 4), (4, 5), (5, 10)]) == True
     _contiguous([(1, 2), (4, 5)]) == False
   """
-  for a, b in _window(sorted_grams, 2):
-    if a.end != b.begin:
-      return False
-  return True
+  return all(a.end == b.begin for a, b in _window(sorted_grams, 2))
 
 
 def _masking_ngrams(grams, max_ngram_size, max_masked_tokens, rng):
@@ -473,7 +463,7 @@ def _masking_ngrams(grams, max_ngram_size, max_masked_tokens, rng):
   # Ensure our grams are valid (i.e., they don't overlap).
   for a, b in _window(grams, 2):
     if a.end > b.begin:
-      raise ValueError("overlapping grams: {}".format(grams))
+      raise ValueError(f"overlapping grams: {grams}")
 
   # Build map from n-gram length to list of n-grams.
   ngrams = {i: [] for i in range(1, max_ngram_size+1)}
@@ -555,10 +545,7 @@ def _wordpieces_to_grams(tokens):
       continue
     if gram_start_pos is not None:
       grams.append(_Gram(gram_start_pos, i))
-    if token not in ["[CLS]", "[SEP]"]:
-      gram_start_pos = i
-    else:
-      gram_start_pos = None
+    gram_start_pos = i if token not in ["[CLS]", "[SEP]"] else None
   if gram_start_pos is not None:
     grams.append(_Gram(gram_start_pos, len(tokens)))
   return grams
@@ -571,10 +558,9 @@ def create_masked_lm_predictions(tokens, masked_lm_prob,
   """Creates the predictions for the masked LM objective."""
   if do_whole_word_mask:
     grams = _wordpieces_to_grams(tokens)
+  elif max_ngram_size:
+    raise ValueError("cannot use ngram masking without whole word masking")
   else:
-    # Here we consider each token to be a word to allow for sub-word masking.
-    if max_ngram_size:
-      raise ValueError("cannot use ngram masking without whole word masking")
     grams = [_Gram(i, i+1) for i in range(0, len(tokens))
              if tokens[i] not in ["[CLS]", "[SEP]"]]
 
@@ -591,13 +577,10 @@ def create_masked_lm_predictions(tokens, masked_lm_prob,
     # 80% of the time, replace all n-gram tokens with [MASK]
     if rng.random() < 0.8:
       replacement_action = lambda idx: "[MASK]"
+    elif rng.random() < 0.5:
+      replacement_action = lambda idx: tokens[idx]
     else:
-      # 10% of the time, keep all the original n-gram tokens.
-      if rng.random() < 0.5:
-        replacement_action = lambda idx: tokens[idx]
-      # 10% of the time, replace each n-gram token with a random word.
-      else:
-        replacement_action = lambda idx: rng.choice(vocab_words)
+      replacement_action = lambda idx: rng.choice(vocab_words)
 
     for idx in range(gram.begin, gram.end):
       output_tokens[idx] = replacement_action(idx)

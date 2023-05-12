@@ -60,7 +60,7 @@ def _create_bert_model(cfg):
   Returns:
     A BertEncoder network.
   """
-  bert_encoder = networks.BertEncoder(
+  return networks.BertEncoder(
       vocab_size=cfg.vocab_size,
       hidden_size=cfg.hidden_size,
       num_layers=cfg.num_hidden_layers,
@@ -73,9 +73,8 @@ def _create_bert_model(cfg):
       type_vocab_size=cfg.type_vocab_size,
       initializer=tf.keras.initializers.TruncatedNormal(
           stddev=cfg.initializer_range),
-      embedding_width=cfg.embedding_size)
-
-  return bert_encoder
+      embedding_width=cfg.embedding_size,
+  )
 
 
 def _create_bert_pretrainer_model(cfg):
@@ -124,7 +123,7 @@ def convert_checkpoint(bert_config,
   elif converted_model == "pretrainer":
     model = _create_bert_pretrainer_model(bert_config)
   else:
-    raise ValueError("Unsupported converted_model: %s" % converted_model)
+    raise ValueError(f"Unsupported converted_model: {converted_model}")
 
   # Create a V2 checkpoint from the temporary checkpoint.
   tf1_checkpoint_converter_lib.create_v2_checkpoint(model, temporary_checkpoint,

@@ -287,8 +287,8 @@ class ProgressiveTrainer(trainer_lib.Trainer):
     # Make sure we export the last checkpoint.
     last_checkpoint = (
         self.global_step.numpy() == self._config.trainer.train_steps)
-    checkpoint_path = self._export_ckpt_manager.save(
+    if checkpoint_path := self._export_ckpt_manager.save(
         checkpoint_number=self.global_step.numpy(),
-        check_interval=not last_checkpoint)
-    if checkpoint_path:
+        check_interval=not last_checkpoint,
+    ):
       logging.info('Checkpoints exported: %s.', checkpoint_path)

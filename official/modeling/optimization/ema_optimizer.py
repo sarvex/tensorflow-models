@@ -182,11 +182,10 @@ class ExponentialMovingAverage(tf.keras.optimizers.Optimizer):
       assign_op: The op corresponding to the assignment operation of
         variables to their average.
     """
-    assign_op = tf.group([
+    return tf.group([
         var.assign(self.get_slot(var, 'average')) for var in var_list
         if var.trainable
     ])
-    return assign_op
 
   def _create_hypers(self):
     self._optimizer._create_hypers()  # pylint: disable=protected-access

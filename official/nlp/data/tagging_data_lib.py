@@ -59,22 +59,19 @@ def _read_one_file(file_name, label_list):
   sentence_id = 0
   example = InputExample(sentence_id=0)
   for line in lines:
-    line = line.strip("\n")
-    if line:
+    if line := line.strip("\n"):
       # The format is: <token>\t<label> for train/dev set and <token> for test.
       items = line.split("\t")
-      assert len(items) == 2 or len(items) == 1
+      assert len(items) in {2, 1}
       token = items[0].strip()
 
       # Assign a dummy label_id for test set
       label_id = label_id_map[items[1].strip()] if len(items) == 2 else 0
       example.add_word_and_label_id(token, label_id)
-    else:
-      # Empty line indicates a new sentence.
-      if example.words:
-        examples.append(example)
-        sentence_id += 1
-        example = InputExample(sentence_id=sentence_id)
+    elif example.words:
+      examples.append(example)
+      sentence_id += 1
+      example = InputExample(sentence_id=sentence_id)
 
   if example.words:
     examples.append(example)
@@ -134,11 +131,11 @@ class PanxProcessor(classifier_data_lib.DataProcessor):
     return examples
 
   def get_test_examples(self, data_dir):
-    examples_dict = {}
-    for language in self.supported_languages:
-      examples_dict[language] = _read_one_file(
-          os.path.join(data_dir, "test-%s.tsv" % language), self.get_labels())
-    return examples_dict
+    return {
+        language: _read_one_file(os.path.join(data_dir, f"test-{language}.tsv"),
+                                 self.get_labels())
+        for language in self.supported_languages
+    }
 
   def get_labels(self):
     return ["O", "B-PER", "I-PER", "B-LOC", "I-LOC", "B-ORG", "I-ORG"]
@@ -201,11 +198,11 @@ class UdposProcessor(classifier_data_lib.DataProcessor):
     return examples
 
   def get_test_examples(self, data_dir):
-    examples_dict = {}
-    for language in self.supported_languages:
-      examples_dict[language] = _read_one_file(
-          os.path.join(data_dir, "test-%s.tsv" % language), self.get_labels())
-    return examples_dict
+    return {
+        language: _read_one_file(os.path.join(data_dir, f"test-{language}.tsv"),
+                                 self.get_labels())
+        for language in self.supported_languages
+    }
 
   def get_labels(self):
     return [
@@ -224,8 +221,8 @@ def _tokenize_example(example, max_length, tokenizer, text_preprocessing=None):
   max_length = max_length - 2
   new_examples = []
   new_example = InputExample(sentence_id=example.sentence_id, sub_sentence_id=0)
-  if any([x < 0 for x in example.label_ids]):
-    raise ValueError("Unexpected negative label_id: %s" % example.label_ids)
+  if any(x < 0 for x in example.label_ids):
+    raise ValueError(f"Unexpected negative label_id: {example.label_ids}")
 
   for i, word in enumerate(example.words):
     if text_preprocessing:
@@ -407,20 +404,20 @@ def generate_tf_record_from_data_file(processor, data_dir, tokenizer,
       eval_examples, output_file=eval_data_output_path, **common_kwargs)
 
   test_input_data_examples = processor.get_test_examples(data_dir)
-  test_data_size = {}
-  for language, examples in test_input_data_examples.items():
-    test_data_size[language] = write_example_to_file(
-        examples,
-        output_file=test_data_output_path.format(language),
-        **common_kwargs)
-
+  test_data_size = {
+      language:
+      write_example_to_file(examples,
+                            output_file=test_data_output_path.format(language),
+                            **common_kwargs)
+      for language, examples in test_input_data_examples.items()
+  }
   labels = processor.get_labels()
-  meta_data = token_classification_meta_data(
+  return token_classification_meta_data(
       train_data_size,
       max_seq_length,
       len(labels),
       eval_data_size,
       test_data_size,
       label_list=labels,
-      processor_type=processor.get_processor_name())
-  return meta_data
+      processor_type=processor.get_processor_name(),
+  )

@@ -207,8 +207,9 @@ class BertPretrainerV2(tf.keras.Model):
     _ = self.encoder_network(self.encoder_network.inputs)
     inputs = copy.copy(self.encoder_network.inputs)
     self.classification_heads = classification_heads or []
-    if len(set([cls.name for cls in self.classification_heads])) != len(
-        self.classification_heads):
+    if len({cls.name
+            for cls in self.classification_heads}) != len(
+                self.classification_heads):
       raise ValueError('Classification heads should have unique names.')
 
     self.masked_lm = customized_masked_lm or layers.MaskedLM(
@@ -231,7 +232,7 @@ class BertPretrainerV2(tf.keras.Model):
           (ref.name, tensor) for ref, tensor in zip(self.inputs, inputs)
       ])
 
-    outputs = dict()
+    outputs = {}
     encoder_network_outputs = self.encoder_network(inputs)
     if isinstance(encoder_network_outputs, list):
       outputs['pooled_output'] = encoder_network_outputs[1]

@@ -39,4 +39,4 @@ def pick_dataset_fn(file_type: str) -> PossibleDatasetType:
   if file_type == 'tfrecord':
     return tf.data.TFRecordDataset
 
-  raise ValueError('Unrecognized file_type: {}'.format(file_type))
+  raise ValueError(f'Unrecognized file_type: {file_type}')

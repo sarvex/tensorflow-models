@@ -38,8 +38,7 @@ def run_experiment(distribution_strategy: tf.distribute.Strategy,
                    params: config_definitions.ExperimentConfig,
                    model_dir: str,
                    run_post_eval: bool = False,
-                   save_summary: bool = True) \
--> Tuple[tf.keras.Model, Mapping[str, Any]]:
+                   save_summary: bool = True) -> Tuple[tf.keras.Model, Mapping[str, Any]]:
   """Runs train/eval configured by the experiment params.
 
   Args:
@@ -107,16 +106,14 @@ def run_experiment(distribution_strategy: tf.distribute.Strategy,
     elif mode == 'continuous_eval':
 
       def timeout_fn():
-        if trainer.global_step.numpy() >= params.trainer.train_steps:
-          return True
-        return False
+        return trainer.global_step.numpy() >= params.trainer.train_steps
 
       controller.evaluate_continuously(
           steps=params.trainer.validation_steps,
           timeout=params.trainer.continuous_eval_timeout,
           timeout_fn=timeout_fn)
     else:
-      raise NotImplementedError('The mode is not implemented: %s' % mode)
+      raise NotImplementedError(f'The mode is not implemented: {mode}')
 
   if run_post_eval:
     with distribution_strategy.scope():

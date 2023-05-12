@@ -61,8 +61,7 @@ def _get_input_iterator(input_fn, strategy):
   # pass callable that returns a dataset.
   if not callable(input_fn):
     raise ValueError('`input_fn` should be a closure that returns a dataset.')
-  iterator = iter(strategy.distribute_datasets_from_function(input_fn))
-  return iterator
+  return iter(strategy.distribute_datasets_from_function(input_fn))
 
 
 def _float_metric_value(metric):
@@ -244,13 +243,13 @@ def run_customized_training_loop(
     steps_per_loop = steps_between_evals
   assert tf.executing_eagerly()
 
-  if run_eagerly:
-    if isinstance(
-        strategy,
-        (tf.distribute.TPUStrategy, tf.distribute.experimental.TPUStrategy)):
-      raise ValueError(
-          'TPUStrategy should not run eagerly as it heavily relies on graph'
-          ' optimization for the distributed system.')
+  if run_eagerly and isinstance(
+      strategy,
+      (tf.distribute.TPUStrategy, tf.distribute.experimental.TPUStrategy),
+  ):
+    raise ValueError(
+        'TPUStrategy should not run eagerly as it heavily relies on graph'
+        ' optimization for the distributed system.')
 
   if eval_input_fn and eval_steps is None:
     raise ValueError(
@@ -421,7 +420,7 @@ def run_customized_training_loop(
       # different from the way training_loss is calculated, it is needed to
       # gather all the logits and labels here to calculate the evaluation loss
       # outside.
-      loss_list, loss_weights = list(), list()
+      loss_list, loss_weights = [], []
       for _ in range(eval_steps):
         outputs, labels = test_step(test_iterator)
         for cur_logits, cur_labels in zip(outputs, labels):
@@ -554,8 +553,12 @@ def run_customized_training_loop(
         callback_list.on_epoch_end(int(current_step / steps_per_epoch), logs)
 
     if sub_model_export_name:
-      _save_checkpoint(strategy, sub_model_checkpoint, model_dir,
-                       '%s.ckpt' % sub_model_export_name)
+      _save_checkpoint(
+          strategy,
+          sub_model_checkpoint,
+          model_dir,
+          f'{sub_model_export_name}.ckpt',
+      )
 
     _save_checkpoint(strategy, checkpoint, model_dir,
                      checkpoint_name.format(step=current_step))

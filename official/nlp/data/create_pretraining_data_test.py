@@ -41,7 +41,7 @@ class CreatePretrainingDataTest(tf.test.TestCase):
       if (output_token == "[MASK]" or output_token in _VOCAB_WORDS or
           output_token == input_tokens[pos]):
         continue
-      self.fail("invalid mask value: {}".format(output_token))
+      self.fail(f"invalid mask value: {output_token}")
 
   def test_wordpieces_to_grams(self):
     tests = [
@@ -107,7 +107,7 @@ class CreatePretrainingDataTest(tf.test.TestCase):
       self.assertIn(masked_labels, [["a", "##a"], ["b", "##b"], ["c", "##c"]])
 
   def test_create_masked_lm_predictions_ngram(self):
-    tokens = ["[CLS]"] + ["tok{}".format(i) for i in range(0, 512)] + ["[SEP]"]
+    tokens = ["[CLS]"] + [f"tok{i}" for i in range(0, 512)] + ["[SEP]"]
     rng = random.Random(345)
     for _ in range(0, 5):
       output_tokens, masked_positions, masked_labels = (

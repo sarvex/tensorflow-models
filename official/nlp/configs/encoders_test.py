@@ -28,7 +28,7 @@ class EncodersTest(tf.test.TestCase):
         type="bert", bert=encoders.BertEncoderConfig(num_layers=1))
     encoder = encoders.build_encoder(config)
     ckpt = tf.train.Checkpoint(encoder=encoder)
-    ckpt_path = ckpt.save(self.get_temp_dir() + "/ckpt")
+    ckpt_path = ckpt.save(f"{self.get_temp_dir()}/ckpt")
     params_save_path = os.path.join(self.get_temp_dir(), "params.yaml")
     hyperparams.save_params_dict_to_yaml(config, params_save_path)
 

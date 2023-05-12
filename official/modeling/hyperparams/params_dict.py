@@ -91,10 +91,7 @@ class ParamsDict(object):
     self.override(default_params, is_strict=False)
 
   def _set(self, k, v):
-    if isinstance(v, dict):
-      self.__dict__[k] = ParamsDict(v)
-    else:
-      self.__dict__[k] = copy.deepcopy(v)
+    self.__dict__[k] = ParamsDict(v) if isinstance(v, dict) else copy.deepcopy(v)
 
   def __setattr__(self, k, v):
     """Sets the value of the existing key.
@@ -111,9 +108,9 @@ class ParamsDict(object):
     """
     if k not in ParamsDict.RESERVED_ATTR:
       if k not in self.__dict__.keys():
-        raise KeyError('The key `%{}` does not exist. '
-                       'To extend the existing keys, use '
-                       '`override` with `is_strict` = True.'.format(k))
+        raise KeyError(
+            f'The key `%{k}` does not exist. To extend the existing keys, use `override` with `is_strict` = True.'
+        )
       if self._locked:
         raise ValueError('The ParamsDict has been locked. '
                          'No change is allowed.')
@@ -132,7 +129,7 @@ class ParamsDict(object):
       AttributeError: if k is not defined in the ParamsDict.
     """
     if k not in self.__dict__.keys():
-      raise AttributeError('The key `{}` does not exist. '.format(k))
+      raise AttributeError(f'The key `{k}` does not exist. ')
     return self.__dict__[k]
 
   def __contains__(self, key):
@@ -154,10 +151,9 @@ class ParamsDict(object):
       ValueError: if the ParamsDict instance has been locked.
     """
     if k in ParamsDict.RESERVED_ATTR:
-      raise AttributeError(
-          'The key `{}` is reserved. No change is allowes. '.format(k))
+      raise AttributeError(f'The key `{k}` is reserved. No change is allowes. ')
     if k not in self.__dict__.keys():
-      raise AttributeError('The key `{}` does not exist. '.format(k))
+      raise AttributeError(f'The key `{k}` does not exist. ')
     if self._locked:
       raise ValueError('The ParamsDict has been locked. No change is allowed.')
     del self.__dict__[k]
@@ -186,20 +182,20 @@ class ParamsDict(object):
       if k in ParamsDict.RESERVED_ATTR:
         raise KeyError('The key `%{}` is internally reserved. '
                        'Can not be overridden.')
-      if k not in self.__dict__.keys():
-        if is_strict:
-          raise KeyError('The key `{}` does not exist. '
-                         'To extend the existing keys, use '
-                         '`override` with `is_strict` = False.'.format(k))
-        else:
-          self._set(k, v)
-      else:
+      if k in self.__dict__.keys():
         if isinstance(v, dict):
           self.__dict__[k]._override(v, is_strict)  # pylint: disable=protected-access
         elif isinstance(v, ParamsDict):
           self.__dict__[k]._override(v.as_dict(), is_strict)  # pylint: disable=protected-access
         else:
           self.__dict__[k] = copy.deepcopy(v)
+
+      elif is_strict:
+        raise KeyError(
+            f'The key `{k}` does not exist. To extend the existing keys, use `override` with `is_strict` = False.'
+        )
+      else:
+        self._set(k, v)
 
   def lock(self):
     """Makes the ParamsDict immutable."""
@@ -210,14 +206,11 @@ class ParamsDict(object):
 
     For the nested ParamsDict, a nested dict will be returned.
     """
-    params_dict = {}
-    for k, v in six.iteritems(self.__dict__):
-      if k not in ParamsDict.RESERVED_ATTR:
-        if isinstance(v, ParamsDict):
-          params_dict[k] = v.as_dict()
-        else:
-          params_dict[k] = copy.deepcopy(v)
-    return params_dict
+    return {
+        k: v.as_dict() if isinstance(v, ParamsDict) else copy.deepcopy(v)
+        for k, v in six.iteritems(self.__dict__)
+        if k not in ParamsDict.RESERVED_ATTR
+    }
 
   def validate(self):
     """Validate the parameters consistency based on the restrictions.
@@ -261,10 +254,7 @@ class ParamsDict(object):
       """Get keys and values indicated by dotted_string."""
       if _CONST_VALUE_RE.match(dotted_string) is not None:
         const_str = dotted_string
-        if const_str == 'None':
-          constant = None
-        else:
-          constant = float(const_str)
+        constant = None if const_str == 'None' else float(const_str)
         return None, constant
       else:
         tokenized_params = dotted_string.split('.')
@@ -385,14 +375,15 @@ def nested_csv_str_to_json_str(csv_str):
   if not csv_str:
     return ''
 
-  formatted_entries = []
   nested_map = collections.defaultdict(list)
   pos = 0
+  formatted_entries = []
   while pos < len(csv_str):
     m = _PARAM_RE.match(csv_str, pos)
     if not m:
-      raise ValueError('Malformed hyperparameter value while parsing '
-                       'CSV string: %s' % csv_str[pos:])
+      raise ValueError(
+          f'Malformed hyperparameter value while parsing CSV string: {csv_str[pos:]}'
+      )
     pos = m.end()
     # Parse the values.
     m_dict = m.groupdict()
@@ -402,7 +393,7 @@ def nested_csv_str_to_json_str(csv_str):
     # If a GCS path (e.g. gs://...) is provided, wrap this in quotes
     # as yaml.load would otherwise throw an exception
     if re.match(r'(?=[^\"\'])(?=[gs://])', v):
-      v = '\'{}\''.format(v)
+      v = f"\'{v}\'"
 
     name_nested = name.split('.')
     if len(name_nested) > 1:
@@ -410,12 +401,12 @@ def nested_csv_str_to_json_str(csv_str):
       value = '.'.join(name_nested[1:]) + '=' + v
       nested_map[grouping].append(value)
     else:
-      formatted_entries.append('%s : %s' % (name, v))
+      formatted_entries.append(f'{name} : {v}')
 
   for grouping, value in nested_map.items():
     value = ','.join(value)
     value = nested_csv_str_to_json_str(value)
-    formatted_entries.append('%s : %s' % (grouping, value))
+    formatted_entries.append(f'{grouping} : {value}')
   return '{' + ', '.join(formatted_entries) + '}'
 
 

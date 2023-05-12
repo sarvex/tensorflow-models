@@ -118,12 +118,12 @@ class TrainerTest(tf.test.TestCase, parameterized.TestCase):
     self._config = get_exp_config()
 
   def create_test_trainer(self, distribution, model_dir, change_train_dataset):
-    trainer = trainer_lib.ProgressiveTrainer(
+    return trainer_lib.ProgressiveTrainer(
         self._config,
-        prog_task=TestPolicy(
-            distribution, self._config.task, change_train_dataset),
-        ckpt_dir=model_dir)
-    return trainer
+        prog_task=TestPolicy(distribution, self._config.task,
+                             change_train_dataset),
+        ckpt_dir=model_dir,
+    )
 
   @combinations.generate(all_strategy_combinations())
   def test_checkpointing(self, distribution):
@@ -138,7 +138,7 @@ class TrainerTest(tf.test.TestCase, parameterized.TestCase):
 
       trainer = self.create_test_trainer(distribution, model_dir, True)
       self.assertFalse(trainer._task.is_last_stage)
-      trainer.checkpoint.restore(ckpt_file + '-1')
+      trainer.checkpoint.restore(f'{ckpt_file}-1')
       self.assertTrue(trainer._task.is_last_stage)
 
   @combinations.generate(all_strategy_combinations())
@@ -186,11 +186,11 @@ class TrainerWithMaskedLMTaskTest(tf.test.TestCase, parameterized.TestCase):
     self._config = get_exp_config()
 
   def create_test_trainer(self, distribution):
-    trainer = trainer_lib.ProgressiveTrainer(
+    return trainer_lib.ProgressiveTrainer(
         self._config,
         prog_task=TestPolicy(distribution, self._config.task),
-        ckpt_dir=self.get_temp_dir())
-    return trainer
+        ckpt_dir=self.get_temp_dir(),
+    )
 
   @combinations.generate(all_strategy_combinations())
   def test_trainer_train(self, distribution):
@@ -225,11 +225,8 @@ class TrainerWithMaskedLMTaskTest(tf.test.TestCase, parameterized.TestCase):
             export_only_final_stage_ckpt=False))
     task = TestPolicy(None, config.task)
     trainer = trainer_lib.ProgressiveTrainer(config, task, self.get_temp_dir())
-    if mixed_precision_dtype != 'float16':
+    if mixed_precision_dtype != 'float16' or loss_scale is None:
       self.assertIsInstance(trainer.optimizer, tf.keras.optimizers.SGD)
-    elif mixed_precision_dtype == 'float16' and loss_scale is None:
-      self.assertIsInstance(trainer.optimizer, tf.keras.optimizers.SGD)
-
     metrics = trainer.train(tf.convert_to_tensor(5, dtype=tf.int32))
     self.assertIn('training_loss', metrics)
 

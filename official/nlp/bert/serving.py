@@ -91,8 +91,7 @@ class BertServing(tf.keras.Model):
   @classmethod
   def export(cls, model, export_dir):
     if not isinstance(model, cls):
-      raise ValueError("Invalid model instance: %s, it should be a %s" %
-                       (model, cls))
+      raise ValueError(f"Invalid model instance: {model}, it should be a {cls}")
 
     signatures = {
         "serving_default":

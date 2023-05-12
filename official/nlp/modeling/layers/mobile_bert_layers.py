@@ -36,8 +36,7 @@ class NoNorm(tf.keras.layers.Layer):
                                  initializer='ones')
 
   def call(self, feature):
-    output = feature * self.scale + self.bias
-    return output
+    return feature * self.scale + self.bias
 
 
 def _get_norm_layer(normalization_type='no_norm', name=None):
@@ -283,7 +282,7 @@ class MobileBertTransformer(tf.keras.layers.Layer):
     self.block_layers['ffn'] = []
     for ffn_layer_idx in range(self.num_feedforward_networks):
       layer_prefix = f'ffn_layer_{ffn_layer_idx}'
-      layer_name = layer_prefix + '/intermediate_dense'
+      layer_name = f'{layer_prefix}/intermediate_dense'
       intermediate_layer = tf.keras.layers.experimental.EinsumDense(
           'abc,cd->abd',
           activation=self.intermediate_act_fn,
@@ -291,14 +290,14 @@ class MobileBertTransformer(tf.keras.layers.Layer):
           bias_axes='d',
           kernel_initializer=initializer,
           name=layer_name)
-      layer_name = layer_prefix + '/output_dense'
+      layer_name = f'{layer_prefix}/output_dense'
       output_layer = tf.keras.layers.experimental.EinsumDense(
           'abc,cd->abd',
           output_shape=[None, self.intra_bottleneck_size],
           bias_axes='d',
           kernel_initializer=initializer,
           name=layer_name)
-      layer_name = layer_prefix + '/norm'
+      layer_name = f'{layer_prefix}/norm'
       layer_norm = _get_norm_layer(self.normalization_type,
                                    name=layer_name)
       self.block_layers['ffn'].append([intermediate_layer,
@@ -517,9 +516,7 @@ class MobileBertMaskedLM(tf.keras.layers.Layer):
         masked_positions)[1]
     logits = tf.reshape(logits,
                         [-1, masked_positions_length, self._vocab_size])
-    if self._output_type == 'logits':
-      return logits
-    return tf.nn.log_softmax(logits)
+    return logits if self._output_type == 'logits' else tf.nn.log_softmax(logits)
 
   def get_config(self):
     raise NotImplementedError('MaskedLM cannot be directly serialized because '
@@ -550,6 +547,4 @@ class MobileBertMaskedLM(tf.keras.layers.Layer):
     flat_positions = tf.reshape(positions + flat_offsets, [-1])
     flat_sequence_tensor = tf.reshape(sequence_tensor,
                                       [batch_size * seq_length, width])
-    output_tensor = tf.gather(flat_sequence_tensor, flat_positions)
-
-    return output_tensor
+    return tf.gather(flat_sequence_tensor, flat_positions)

@@ -136,8 +136,7 @@ def get_loss_scale(params: base_configs.ExperimentConfig,
     return loss_scale
   elif loss_scale is not None:
     return float(loss_scale)
-  elif (params.train_dataset.dtype == 'float32' or
-        params.train_dataset.dtype == 'bfloat16'):
+  elif params.train_dataset.dtype in ['float32', 'bfloat16']:
     return 1.
   else:
     assert params.train_dataset.dtype == 'float16'
@@ -399,9 +398,7 @@ def train_and_eval(
     validation_output = model.evaluate(
         validation_dataset, steps=validation_steps, verbose=2)
 
-  # TODO(dankondratyuk): eval and save final test accuracy
-  stats = common.build_stats(history, validation_output, callbacks)
-  return stats
+  return common.build_stats(history, validation_output, callbacks)
 
 
 def export(params: base_configs.ExperimentConfig):
@@ -436,12 +433,11 @@ def run(flags_obj: flags.FlagValues,
   elif params.mode == 'export_only':
     export(params)
   else:
-    raise ValueError('{} is not a valid mode.'.format(params.mode))
+    raise ValueError(f'{params.mode} is not a valid mode.')
 
 
 def main(_):
-  stats = run(flags.FLAGS)
-  if stats:
+  if stats := run(flags.FLAGS):
     logging.info('Run stats:\n%s', stats)
 
 
